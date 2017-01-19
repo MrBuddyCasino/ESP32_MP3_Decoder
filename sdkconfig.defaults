@@ -1,0 +1,9 @@
+# Override defaults here
+
+
+#
+# ESP32-specific config
+#
+
+CONFIG_ESP32_DEFAULT_CPU_FREQ_160=y
+CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ=160
