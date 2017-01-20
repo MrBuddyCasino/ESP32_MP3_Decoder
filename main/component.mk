@@ -8,4 +8,4 @@
 #
 
 # define makros which take wifi AP name and password from environment variables
-CFLAGS += -D AP_NAME="$(AP_NAME) -D AP_PASS="$(AP_PASS) 
+# CFLAGS += -D WIFI_AP_NAME=\"$AP_NAME\" -D WIFI_AP_PASS=\"$AP_PASS\" 

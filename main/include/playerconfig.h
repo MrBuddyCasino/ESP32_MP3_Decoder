@@ -2,6 +2,20 @@
 #define _PLAYER_CONFIG_H_
 
 
+/* If you don't want to enter your wifi credentials in this file, you can set them
+   in the shell as environment variables like this:
+   export AP_NAME=wifi_name
+   export AP_PASS=mypasswd */
+
+#ifndef WIFI_AP_NAME
+#define WIFI_AP_NAME "cc-wlan"
+#endif
+
+#ifndef WIFI_AP_PASS
+#define WIFI_AP_PASS "****"
+#endif
+
+
 /* Define stream URL here. For example, the URL to the MP3 stream of a certain Dutch radio station
 is http://icecast.omroep.nl/3fm-sb-mp3 . This translates of a server name of "icecast.omroep.nl"
 and a path of "/3fm-sb-mp3". The port usually is 80 (the standard HTTP port) */
@@ -74,32 +88,13 @@ the music sounding higher/lower due to network issues.*/
 Same as ADD_DEL_BUFFPERSAMP but for systems without a big SPI RAM chip to buffer mp3 data in.*/
 #define ADD_DEL_BUFFPERSAMP_NOSPIRAM (1500)
 
-/*Most I2S codecs are okay with getting more than 16 samples, and we can use this to get the
-sample rate we send out somewhat closer to the real sample rate of the MP3 stream. Some codecs
-however (e.g. the PCM5102) will not output anything when this happens. Undefine the following
-define in that case, it makes the I2S port always send out strictly 16-bit samples.*/
-// #define ALLOW_VARY_SAMPLE_BITS
-
 
 /*While connecting an I2S codec to the I2S port of the ESP is obviously the best way to get nice
 16-bit sounds out of the ESP, it is possible to run this code without the codec. For
-this to work, instead of outputting a 2x16bit PCM sample the DAC can decode, we use the I2S
-port as a makeshift 5-bit PWM generator. To do this, we map every mp3 sound sample to a
-value that has an amount of 1's set that's linearily related to the sound samples value and
-then output that value on the I2S port. The net result is that the average analog value on the
-I2S data pin corresponds to the value of the MP3 sample we're trying to output. Needless to
-say, a hacked 5-bit PWM output is going to sound a lot worse than a real I2S codec.*/
-//#define PWM_HACK
+this to work, instead of outputting a 2x16bit PCM sample the DAC can decode, we use the built-in
+8-Bit DAC.*/
+// #define USE_DAC
 
-/*
-As an alternative to the PWM hack, you can also use a 2nd order delta sigma converter to
-output directly into an amp/speaker. This is a bit more noisy than the PWM code, but the
-noise is concentrated in the higher frequencies: you can easily filter it using a simple
-R/C lowpass filter, eg 100 ohm in series with the output, 100NF from there to ground.
-This will clock the ESP at 160MHz; the delta-sigma process eats just a bit too much
-CPU power to run stable at 80MHz without causing DMA dropouts.
-*/
-//#define DELTA_SIGMA_HACK
 
 /*While a large (tens to hundreds of K) buffer is necessary for Internet streams, on a
 quiet network and with a direct connection to the stream server, you can get away with
@@ -110,20 +105,6 @@ the MP3 decoder. Be warned, if your network isn't 100% quiet and latency-free an
 the server isn't very close to your ESP, this _will_ lead to stutters in the played
 MP3 stream! */
 #define FAKE_SPI_BUFF
-
-
-/* MQTT config */
-
-/* max. length of pub queue  */
-#define PUB_MSG_LEN 16
-
-/* mqtt broker */
-//#define MQTT_HOST "192.168.101.20"
-#define MQTT_HOST "192.168.1.2"
-#define MQTT_PORT 1883
-#define MQTT_USER ""
-#define MQTT_PASS ""
-
 
 /** prints the amount of unused stack memory for an freertos task in words */
 //#define PRINT_TASK_MEMORY

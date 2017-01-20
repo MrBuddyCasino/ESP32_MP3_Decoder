@@ -39,6 +39,7 @@
 
 #define WIFI_LIST_NUM   10
 
+
 #define TAG "main"
 
 
@@ -117,8 +118,10 @@ static void initialise_wifi(void)
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_FLASH) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
@@ -128,7 +131,19 @@ static void initialise_wifi(void)
 
 
 //Reformat the 16-bit mono sample to a format we can send to I2S.
-static int sampToI2s(short s) {
+static short mono_to_8bit_stereo(short s) {
+
+    // convert 16bit to 8bit and duplicate mono sample to both channels
+    char eightBit = s >> 8;
+    short samp = eightBit;
+    samp = (samp) & 0xff;
+    samp = (samp << 8) | samp;
+    return samp;
+}
+
+//Reformat the 16-bit mono sample to a format we can send to I2S.
+static int mono_to_16bit_stereo(short s) {
+
     //We can send a 32-bit sample to the I2S subsystem and the DAC will neatly split it up in 2
     //16-bit analog values, one for left and one for right.
 
@@ -137,49 +152,6 @@ static int sampToI2s(short s) {
     samp=(samp)&0xffff;
     samp=(samp<<16)|samp;
     return samp;
-}
-
-//Array with 32-bit values which have one bit more set to '1' in every consecutive array index value
-const unsigned int fakePwm[]={ 0x00000010, 0x00000410, 0x00400410, 0x00400C10, 0x00500C10, 0x00D00C10, 0x20D00C10, 0x21D00C10, 0x21D80C10,
-    0xA1D80C10, 0xA1D80D10, 0xA1D80D30, 0xA1DC0D30, 0xA1DC8D30, 0xB1DC8D30, 0xB9DC8D30, 0xB9FC8D30, 0xBDFC8D30, 0xBDFE8D30,
-    0xBDFE8D32, 0xBDFE8D33, 0xBDFECD33, 0xFDFECD33, 0xFDFECD73, 0xFDFEDD73, 0xFFFEDD73, 0xFFFEDD7B, 0xFFFEFD7B, 0xFFFFFD7B,
-    0xFFFFFDFB, 0xFFFFFFFB, 0xFFFFFFFF};
-
-static int sampToI2sPwm(short s) {
-    //Okay, when this is enabled it means a speaker is connected *directly* to the data output. Instead of
-    //having a nice PCM signal, we fake a PWM signal here.
-    static int err=0;
-    int samp=s;
-    samp=(samp+32768);  //to unsigned
-    samp-=err;          //Add the error we made when rounding the previous sample (error diffusion)
-    //clip value
-    if (samp>65535) samp=65535;
-    if (samp<0) samp=0;
-    //send pwm value for sample value
-    samp=fakePwm[samp>>11];
-    err=(samp&0x7ff);   //Save rounding error.
-    return samp;
-}
-
-//2nd order delta-sigma DAC
-//See http://www.beis.de/Elektronik/DeltaSigma/DeltaSigma.html for a nice explanation
-static int sampToI2sDeltaSigma(short s) {
-    int x;
-    int val=0;
-    int w;
-    static int i1v=0, i2v=0;
-    static int outReg=0;
-    for (x=0; x<32; x++) {
-        val<<=1; //next bit
-        w=s;
-        if (outReg>0) w-=32767; else w+=32767; //Difference 1
-        w+=i1v; i1v=w; //Integrator 1
-        if (outReg>0) w-=32767; else w+=32767; //Difference 2
-        w+=i2v; i2v=w; //Integrator 2
-        outReg=w;       //register
-        if (w>0) val|=1; //comparator
-    }
-    return val;
 }
 
 
@@ -240,23 +212,21 @@ void render_sample_block(short *short_sample_buff, int no_samples) {
     static int sampAddDel=0;
     //Remainder of sampAddDel cumulatives
     static int sampErr=0;
-    int i;
-    int samp;
 
 #ifdef ADD_DEL_SAMPLES
     sampAddDel=recalcAddDelSamp(sampAddDel);
 #endif
 
 
-    sampErr+=sampAddDel;
-    for (i=0; i<no_samples; i++) {
+    sampErr += sampAddDel;
 
-#if defined(PWM_HACK)
-        samp=sampToI2sPwm(short_sample_buff[i]);
-#elif defined(DELTA_SIGMA_HACK)
-        samp=sampToI2sDeltaSigma(short_sample_buff[i]);
+    int i;
+    for (i=0; i < no_samples; i++) {
+
+#if defined(USE_DAC)
+        short samp = mono_to_8bit_stereo(short_sample_buff[i]);
 #else
-        samp=sampToI2s(short_sample_buff[i]);
+        int samp = mono_to_16bit_stereo(short_sample_buff[i]);
 #endif
 
 
@@ -268,13 +238,10 @@ void render_sample_block(short *short_sample_buff, int no_samples) {
         } else if (sampErr<-(1<<24)) {
             sampErr+=(1<<24);
             //..and output 2 samples instead of one.
-            // i2sPushSample(samp);
-            // i2sPushSample(samp);
             i2s_push_sample(I2S_NUM_0,  (char *)&samp, portMAX_DELAY);
             i2s_push_sample(I2S_NUM_0,  (char *)&samp, portMAX_DELAY);
         } else {
             //Just output the sample.
-            // i2sPushSample(samp);
             i2s_push_sample(I2S_NUM_0,  (char *)&samp, portMAX_DELAY);
         }
     }
@@ -284,25 +251,53 @@ void render_sample_block(short *short_sample_buff, int no_samples) {
 #define I2S_NUM         (0)
 #define SAMPLE_RATE     (44100)
 
-static void initI2S()
+static void init_i2s()
 {
 
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
         .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = 16,                                                  //16-bit per channel
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+        .bits_per_sample = 16,                                                  // 16-bit per channel
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           // 2-channels
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
-        .dma_buf_count = 14, // 128 max
-        .dma_buf_len = 128*2,                                                      //
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                //Interrupt level 1
+        .dma_buf_count = 14,                                                    // number of buffers, 128 max.
+        .dma_buf_len = 32*2,                                                    // size of each buffer
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                // Interrupt level 1
     };
 
     i2s_pin_config_t pin_config = {
         .bck_io_num = 26,
         .ws_io_num = 25,
         .data_out_num = 22,
-        .data_in_num = I2S_PIN_NO_CHANGE                                          //Not used
+        .data_in_num = I2S_PIN_NO_CHANGE                                          // Not used
+    };
+
+    i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+    i2s_set_pin(I2S_NUM, &pin_config);
+}
+
+/*
+ * Output audio without I2S codec via built-in 8-Bit DAC.
+ */
+static void init_i2s_dac()
+{
+
+    i2s_config_t i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,          // Only TX
+        .sample_rate = SAMPLE_RATE,
+        .bits_per_sample = 8,                                                   // Only 8-bit DAC support
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           // 2-channels
+        .communication_format = I2S_COMM_FORMAT_I2S_MSB,
+        .dma_buf_count = 14,                                                    // number of buffers, 128 max.
+        .dma_buf_len = 32*2,                                                    // size of each buffer
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                // Interrupt level 1
+    };
+
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = 26,
+        .ws_io_num = 25,
+        .data_out_num = 22,
+        .data_in_num = I2S_PIN_NO_CHANGE                                          // Not used
     };
 
     i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
@@ -319,13 +314,6 @@ void set_dac_sample_rate(int rate) {
     printf("Rate %d\n", rate);
 
     i2s_set_sample_rates(I2S_NUM_0, rate);
-/*
-#ifdef ALLOW_VARY_SAMPLE_BITS
-    i2sSetRate(rate, 0);
-#else
-    i2sSetRate(rate, 1);
-#endif
-*/
 }
 
 const uint32_t zero_sample[2] = { 0 };
@@ -376,7 +364,6 @@ static enum mad_flow error(void *data, struct mad_stream *stream, struct mad_fra
 //output it to the I2S port.
 void tskmad(void *pvParameters)
 {
-
     if(player->madTaskHandle != xTaskGetCurrentTaskHandle()) {
         printf("MAD task already running!\n");
         vTaskDelete(NULL);
@@ -397,9 +384,12 @@ void tskmad(void *pvParameters)
     if (synth==NULL) { printf("MAD: malloc(synth) failed\n"); return; }
     if (frame==NULL) { printf("MAD: malloc(frame) failed\n"); return; }
 
-    //Initialize I2S
-    //i2sInit();
-    initI2S();
+    // initialize I2S
+#ifdef USE_DAC
+    init_i2s_dac();
+#else
+    init_i2s();
+#endif
 
 
     bufUnderrunCt = 0;
@@ -502,12 +492,24 @@ static void http_get_task(void *pvParameters)
 
 
 
-static void setWifiCredentials()
+static void set_wifi_credentials()
 {
+    wifi_config_t current_config;
+    esp_wifi_get_config(WIFI_IF_STA, &current_config);
+
+    // no changes? return and save a bit of startup time
+    if(strcmp( (const char *) current_config.sta.ssid, WIFI_AP_NAME) == 0 &&
+       strcmp( (const char *) current_config.sta.password, WIFI_AP_PASS) == 0)
+    {
+        ESP_LOGI(TAG, "keeping wifi config: %s", WIFI_AP_NAME);
+        return;
+    }
+
+    // wifi config has changed, update
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = "AP_NAME",
-            .password = "AP_PASS",
+            .ssid = WIFI_AP_NAME,
+            .password = WIFI_AP_PASS,
             .bssid_set = 0,
         },
     };
@@ -515,7 +517,7 @@ static void setWifiCredentials()
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     esp_wifi_disconnect();
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    ESP_LOGI(TAG, "esp_wifi connect\n");
+    ESP_LOGI(TAG, "connecting\n");
     esp_wifi_connect();
 }
 
@@ -527,7 +529,7 @@ void app_main()
     initialise_wifi();
 
     // quick hack
-    // setWifiCredentials();
+    set_wifi_credentials();
 
     //Initialize the SPI RAM chip communications and see if it actually retains some bytes. If it
     //doesn't, warn user.
