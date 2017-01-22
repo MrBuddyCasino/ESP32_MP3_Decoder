@@ -19,12 +19,27 @@ Setting wifi options via AP\_NAME and AP\_PASS environment variables doesn't wor
 
 To configure your radio station, just modify PLAY\_SERVER, PLAY\_PATH and PLAY\_PORT.
 
+## Downloading Required Software
+
+Get the SDK:
+
+    git clone https://github.com/espressif/esp-idf.git
+    cd esp-idf
+    git submodule update --init
+
+Set the IDF_PATH environment variable, and point it to this directory.
+
+    export IDF_PATH=/path/to/esp-idf
+
+Download the toolchain from: https://github.com/espressif/esp-idf#setting-up-esp-idf
+You will need version 5.2.0.
+Add /path/to/xtensa-esp32-elf/bin to your PATH:
+
+    export PATH=/path/to/xtensa-esp32-elf/bin:$PATH
+
 ## Building
 
-Set the IDF_PATH environment variable, and point it to the latest 2.0 SDK version (not 1.0!). Currently you can use master or the v2.0-rc1 release candidate.
-
-Execute 'make menuconfig' and configure your serial port, then execute 'make flash'.
-
+Execute 'make menuconfig' and configure your serial port, leave the rest at default settings and then execute 'make flash'.
 
 ## Connecting the I2S codec
 
@@ -46,9 +61,16 @@ GPIO26/DAC2   - BCLK
 GPIO22        - DATA
 ```
 
-If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if +5V is unavailable). SD can remain unconnected, and GAIN too unless you want to make it louder or lower. I recommend using a potentiometer for volume regulation.
+If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if +5V is unavailable). SD can remain unconnected, and GAIN too unless you want to make it louder or lower. I also recommend using a potentiometer for volume regulation.
 
 ## Running without the I2S DAC
 
 The ESP32 has a built-in 8-Bit DAC that we can use. Unfortunately that part isn't working yet, patches welcome!
-The functionality is activated by uncommenting "#define USE_DAC" in playerconfig.h
+The functionality is activated by uncommenting "#define USE_DAC" in playerconfig.h.
+
+## Breadboard Example
+
+I used the Watterott ESP-WROOM-32-Breakout, which is pin-compatible to the Espressif Core Board (DevKitC).
+Please note that in this picture, the JTAG header is connected too, but you can safely ignore that.
+
+<img src="doc/breadboard_wiring.jpg" width="50%" height="50%">
