@@ -50,11 +50,6 @@ rate! */
 #define PLAY_PORT 80
 #endif
 
-#if 0
-#define PLAY_SERVER "mp3ad.egofm.c.nmdn.net"
-#define PLAY_PATH "/ps-egofmsoul_192/livestream.mp3?token=c3RhcnRUaW1lPTIwMTYwNjIzMTkwNjEzJmVuZFRpbWU9MjAxNjA2MjMxOTE2MTMmZGlnZXN0PTY5MmM1ZjRmMWI3NjhlNGY2NTkzMmUyMjQ5MWZkZjBk"
-#define PLAY_PORT "80"
-#endif
 
 #if 1
 #define PLAY_SERVER "ice1.somafm.com"
