@@ -3,7 +3,7 @@ ESP32 MP3 decoder
 This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the MP3
 stream and outputs the audio data to an I2S codec.
 
-This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266\_MP3\_DECODER
+This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
 
 ## What Changed
