@@ -462,7 +462,8 @@ esp_err_t stream_reader(char *recv_buf, ssize_t bytes_read)
 
     t = (t+1) & 255;
     if (t == 0) {
-        printf("Buffer fill %d, DMA underrun ct %d, buff underrun ct %d\n", spiRamFifoFill(), (int)i2sGetUnderrunCnt(), (int)bufUnderrunCt);
+        // printf("Buffer fill %d, DMA underrun ct %d, buff underrun ct %d\n", spiRamFifoFill(), (int)i2sGetUnderrunCnt(), (int)bufUnderrunCt);
+        printf("Buffer fill %d, buff underrun ct %d\n", spiRamFifoFill(), (int)bufUnderrunCt);
     }
 
     return ESP_OK;
