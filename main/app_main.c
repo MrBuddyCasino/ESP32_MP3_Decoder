@@ -485,7 +485,7 @@ static void http_get_task(void *pvParameters)
     }
     ESP_LOGI(TAG, "http_client_get completed");
 
-    ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
+    // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 
     vTaskDelete(NULL);
 }
@@ -547,5 +547,5 @@ void app_main()
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
-    ESP_LOGI(TAG, "app_main stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
+    // ESP_LOGI(TAG, "app_main stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 }
