@@ -293,15 +293,8 @@ static void init_i2s_dac()
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                // Interrupt level 1
     };
 
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = 26,
-        .ws_io_num = 25,
-        .data_out_num = 22,
-        .data_in_num = I2S_PIN_NO_CHANGE                                          // Not used
-    };
-
     i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
-    i2s_set_pin(I2S_NUM, &pin_config);
+    i2s_set_pin(I2S_NUM, NULL);
 }
 
 
