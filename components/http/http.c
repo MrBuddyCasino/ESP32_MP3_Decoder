@@ -21,7 +21,7 @@
 #define TAG "http_client"
 
 
-esp_err_t http_client_get(char *host, char *port, char *path, stream_reader_cb callback)
+int http_client_get(char *host, uint16_t port, char *path, stream_reader_cb callback, void *user_data)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -29,8 +29,10 @@ esp_err_t http_client_get(char *host, char *port, char *path, stream_reader_cb c
     };
     struct addrinfo *res;
     struct in_addr *addr;
+    char port_str[6]; // stack allocated
+    snprintf(port_str, 6, "%d", port);
 
-    int err = getaddrinfo(host, port, &hints, &res);
+    int err = getaddrinfo(host, port_str, &hints, &res);
     if(err != ESP_OK || res == NULL) {
         ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
         return err;
@@ -46,15 +48,21 @@ esp_err_t http_client_get(char *host, char *port, char *path, stream_reader_cb c
         ESP_LOGE(TAG, "... Failed to allocate socket.");
         freeaddrinfo(res);
     }
-    ESP_LOGI(TAG, "... allocated socket\r\n");
+    ESP_LOGI(TAG, "... allocated socket");
 
 
-    // connect
-    if(connect(sock, res->ai_addr, res->ai_addrlen) != 0) {
-        ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
-        close(sock);
-        freeaddrinfo(res);
-        return ESP_FAIL;
+    // connect, retrying a few times
+    char retries = 0;
+    while(connect(sock, res->ai_addr, res->ai_addrlen) != 0) {
+        retries++;
+        ESP_LOGE(TAG, "... socket connect attempt %d failed, errno=%d", retries, errno);
+
+        if(retries > 5) {
+            ESP_LOGE(TAG, "giving up");
+            close(sock);
+            freeaddrinfo(res);
+            return ESP_FAIL;
+        }
     }
 
     ESP_LOGI(TAG, "... connected");
@@ -83,16 +91,15 @@ esp_err_t http_client_get(char *host, char *port, char *path, stream_reader_cb c
     bzero(recv_buf, sizeof(recv_buf));
     ssize_t numBytes;
 
-    esp_err_t cont = ESP_OK;
+    esp_err_t cont = 0;
     do {
         numBytes = read(sock, recv_buf, sizeof(recv_buf)-1);
-        // ESP_LOGI(TAG, "received %d bytes", sizeof(recv_buf));
-        cont = (*callback)(recv_buf, numBytes);
-    } while(numBytes > 0 && cont == ESP_OK);
+        cont = (*callback)(recv_buf, numBytes, user_data);
+    } while(numBytes > 0 && cont == 0);
 
-    ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d\r\n", numBytes, errno);
+    ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d", numBytes, errno);
     close(sock);
     ESP_LOGI(TAG, "socket closed");
 
-    return ESP_OK;
+    return 0;
 }

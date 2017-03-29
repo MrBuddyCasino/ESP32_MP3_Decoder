@@ -1,14 +1,17 @@
-menu "Example Configuration"
+menu "Wifi Configuration"
 
-config BLINK_GPIO
-    int "Blink GPIO number"
-	range 0 34
-	default 5
+config WIFI_SSID
+    string "WiFi SSID"
+	default "myssid"
 	help
-		GPIO number (IOxx) to blink on and off.
+		SSID (network name) to connect to.
 
-		Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+config WIFI_PASSWORD
+    string "WiFi Password"
+	default "myssid"
+	help
+		WiFi password (WPA or WPA2) to use.
 
-		GPIOs 35-39 are input-only so cannot be used as outputs.
+		Can be left blank if the network has no security set.
 
 endmenu
