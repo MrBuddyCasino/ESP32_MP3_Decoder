@@ -15,9 +15,9 @@ We can also use the built-in 8Bit DAC instead of the external I2S codec (not yet
 
 Configuration options are kept in /main/include/playerconfig.h.
 
-Setting wifi options via AP\_NAME and AP\_PASS environment variables doesn't work currently, so you need to edit WIFI\_AP\_NAME and WIFI\_AP\_PASS in playerconfig.h.
+You can set wifi options via 'make menuconfig' or directly in playerconfig.h.
 
-To configure your radio station, just modify PLAY\_SERVER, PLAY\_PATH and PLAY\_PORT.
+To configure your radio station, just modify PLAY_URL.
 
 ## Downloading Required Software
 
@@ -66,7 +66,7 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 ## Running without the I2S DAC
 
 The ESP32 has a built-in 8-Bit DAC that we can use. Unfortunately that part isn't working yet, patches welcome!
-The functionality is activated by uncommenting "#define USE_DAC" in playerconfig.h.
+The functionality is activated by changing the "#define OUTPUT_MODE" setting in playerconfig.h.
 
 ## Breadboard Example
 
