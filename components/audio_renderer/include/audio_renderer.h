@@ -24,8 +24,11 @@ typedef struct
 } renderer_config_t;
 
 
-/* callback for the audio decoder */
-void render_sample_block(short *short_sample_buff, int no_samples);
+/* mono callback for libmad */
+void render_sample_block_mono(short *sample_buff, int num_samples);
+
+/* stereo callback for libmad */
+void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels);
 
 void audio_renderer_init(renderer_config_t *config);
 void audio_renderer_start(renderer_config_t *config);

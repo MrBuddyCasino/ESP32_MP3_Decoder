@@ -36,12 +36,25 @@ static int convert_16bit_mono_to_16bit_stereo(short s)
     //16-bit analog values, one for left and one for right.
 
     //Duplicate 16-bit sample to both the L and R channel
-    int samp = s;
-    samp = (samp) & 0x0000ffff;
-    samp = (samp << 16) | samp;
-    return samp;
+    int sample = s;
+    sample = (sample) & 0x0000ffff;
+    sample = (sample << 16) | sample;
+    return sample;
 }
 
+static short convert_16bit_stereo_to_8bit_stereo(short left, short right)
+{
+    // mask left lower 8 bits, shift right upper bits and combine
+    return (left & 0xff00) | (right >> 8);
+}
+
+static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
+{
+    // mask left lower 8 bits, shift right upper bits and combine
+    unsigned int sample = (unsigned short) left;
+    sample = (sample << 16 & 0xffff0000) | ((unsigned short) right);
+    return sample;
+}
 
 static void init_i2s(renderer_config_t *config)
 {
@@ -90,24 +103,53 @@ static void init_i2s_dac(renderer_config_t *config)
     i2s_set_pin(config->i2s_num, NULL);
 }
 
-
-
-//This routine is called by the NXP modifications of libmad. It passes us (for the mono synth)
-//32 16-bit samples.
-void render_sample_block(short *short_sample_buff, int no_samples) {
-
+/* render callback for the libmad stereo synth */
+void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
+{
     switch(curr_config->bit_depth) {
 
         case I2S_BITS_PER_SAMPLE_8BIT:
-            for (int i=0; i < no_samples; i++) {
-                short samp8 = convert_16bit_mono_to_8bit_stereo(short_sample_buff[i]);
+            for (int i=0; i < num_samples; i++) {
+                short samp8 = convert_16bit_stereo_to_8bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
                 i2s_push_sample(curr_config->i2s_num,  (char *)&samp8, portMAX_DELAY);
             }
             break;
 
         case I2S_BITS_PER_SAMPLE_16BIT:
-            for (int i=0; i < no_samples; i++) {
-                int samp16 = convert_16bit_mono_to_16bit_stereo(short_sample_buff[i]);
+            for (int i=0; i < num_samples; i++) {
+                int samp16 = convert_16bit_stereo_to_16bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
+                i2s_push_sample(curr_config->i2s_num,  (char *)&samp16, portMAX_DELAY);
+            }
+            break;
+
+        case I2S_BITS_PER_SAMPLE_24BIT:
+            // TODO
+            ESP_LOGE(TAG, "24 bit unsupported");
+            break;
+
+        case I2S_BITS_PER_SAMPLE_32BIT:
+            // TODO
+            ESP_LOGE(TAG, "32 bit unsupported");
+            break;
+    }
+}
+
+//This routine is called by the NXP modifications of libmad. It passes us (for the mono synth)
+//32 16-bit samples.
+void render_sample_block_mono(short *sample_buff, int num_samples)
+{
+    switch(curr_config->bit_depth) {
+
+        case I2S_BITS_PER_SAMPLE_8BIT:
+            for (int i=0; i < num_samples; i++) {
+                short samp8 = convert_16bit_mono_to_8bit_stereo(sample_buff[i]);
+                i2s_push_sample(curr_config->i2s_num,  (char *)&samp8, portMAX_DELAY);
+            }
+            break;
+
+        case I2S_BITS_PER_SAMPLE_16BIT:
+            for (int i=0; i < num_samples; i++) {
+                int samp16 = convert_16bit_mono_to_16bit_stereo(sample_buff[i]);
                 i2s_push_sample(curr_config->i2s_num,  (char *)&samp16, portMAX_DELAY);
             }
             break;
@@ -130,8 +172,8 @@ void set_dac_sample_rate(int rate) {
     if(rate == prevRate) return;
     prevRate = rate;
 
-    ESP_LOGI(TAG, "setting sample rate to %d\n", rate / 2);
-    i2s_set_sample_rates(curr_config->i2s_num, rate / 2);
+    ESP_LOGI(TAG, "setting sample rate to %d\n", rate);
+    i2s_set_sample_rates(curr_config->i2s_num, rate);
 }
 
 

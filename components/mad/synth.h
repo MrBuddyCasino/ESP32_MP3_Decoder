@@ -65,7 +65,8 @@ void mad_synth_mute(struct mad_synth *);
 
 void mad_synth_frame(struct mad_synth *, struct mad_frame const *);
 
-void render_sample_block(short *short_sample_buff, int no_samples);
+void render_sample_block_mono(short *short_sample_buff, int no_samples);
+void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels);
 void set_dac_sample_rate(int rate);
 
 

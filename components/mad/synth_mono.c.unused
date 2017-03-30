@@ -605,14 +605,17 @@ void  synth_full(struct mad_synth *synth, struct mad_frame const *frame,
 
   phase = synth->phase;
 
+  if (nch > 2)
+    return;
+
   for (s = 0; s < ns; ++s)
   {
     memset (short_sample_buff, 0x00, sizeof(short_sample_buff));
 
     for (ch = 0; ch < nch; ++ch)
     {
-    sbsample = (void*)&frame->sbsample[ch];
-    filter   = &synth->filter[ch];
+      sbsample = (void*) &frame->sbsample[ch];
+      filter   = &synth->filter[ch];
       pcm1     = short_sample_buff;
 
       dct32((*sbsample)[s], phase >> 1,
@@ -657,61 +660,61 @@ void  synth_full(struct mad_synth *synth, struct mad_frame const *frame,
 
       for (sb = 1; sb < 16; ++sb)
       {
-	++fe;
-	++Dptr;
+        ++fe;
+        ++Dptr;
 
-	/* D[32 - sb][i] == -D[sb][31 - i] */
+		/* D[32 - sb][i] == -D[sb][31 - i] */
 
-	ptr = *Dptr + po;
-	ML0(hi, lo, (*fo)[0], ptr[ 0]);
-	MLA(hi, lo, (*fo)[1], ptr[14]);
-	MLA(hi, lo, (*fo)[2], ptr[12]);
-	MLA(hi, lo, (*fo)[3], ptr[10]);
-	MLA(hi, lo, (*fo)[4], ptr[ 8]);
-	MLA(hi, lo, (*fo)[5], ptr[ 6]);
-	MLA(hi, lo, (*fo)[6], ptr[ 4]);
-	MLA(hi, lo, (*fo)[7], ptr[ 2]);
-	MLN(hi, lo);
+		ptr = *Dptr + po;
+		ML0(hi, lo, (*fo)[0], ptr[ 0]);
+		MLA(hi, lo, (*fo)[1], ptr[14]);
+		MLA(hi, lo, (*fo)[2], ptr[12]);
+		MLA(hi, lo, (*fo)[3], ptr[10]);
+		MLA(hi, lo, (*fo)[4], ptr[ 8]);
+		MLA(hi, lo, (*fo)[5], ptr[ 6]);
+		MLA(hi, lo, (*fo)[6], ptr[ 4]);
+		MLA(hi, lo, (*fo)[7], ptr[ 2]);
+		MLN(hi, lo);
 
-	ptr = *Dptr + pe;
-	MLA(hi, lo, (*fe)[7], ptr[ 2]);
-	MLA(hi, lo, (*fe)[6], ptr[ 4]);
-	MLA(hi, lo, (*fe)[5], ptr[ 6]);
-	MLA(hi, lo, (*fe)[4], ptr[ 8]);
-	MLA(hi, lo, (*fe)[3], ptr[10]);
-	MLA(hi, lo, (*fe)[2], ptr[12]);
-	MLA(hi, lo, (*fe)[1], ptr[14]);
-	MLA(hi, lo, (*fe)[0], ptr[ 0]);
+		ptr = *Dptr + pe;
+		MLA(hi, lo, (*fe)[7], ptr[ 2]);
+		MLA(hi, lo, (*fe)[6], ptr[ 4]);
+		MLA(hi, lo, (*fe)[5], ptr[ 6]);
+		MLA(hi, lo, (*fe)[4], ptr[ 8]);
+		MLA(hi, lo, (*fe)[3], ptr[10]);
+		MLA(hi, lo, (*fe)[2], ptr[12]);
+		MLA(hi, lo, (*fe)[1], ptr[14]);
+		MLA(hi, lo, (*fe)[0], ptr[ 0]);
 
-        raw_sample = SHIFT(MLZ(hi, lo));
-        raw_sample = scale(raw_sample);
-        (*pcm1++) += (short int)raw_sample;
+		raw_sample = SHIFT(MLZ(hi, lo));
+		raw_sample = scale(raw_sample);
+		(*pcm1++) += (short int)raw_sample;
 
-	ptr = *Dptr - pe;
-	ML0(hi, lo, (*fe)[0], ptr[31 - 16]);
-	MLA(hi, lo, (*fe)[1], ptr[31 - 14]);
-	MLA(hi, lo, (*fe)[2], ptr[31 - 12]);
-	MLA(hi, lo, (*fe)[3], ptr[31 - 10]);
-	MLA(hi, lo, (*fe)[4], ptr[31 -  8]);
-	MLA(hi, lo, (*fe)[5], ptr[31 -  6]);
-	MLA(hi, lo, (*fe)[6], ptr[31 -  4]);
-	MLA(hi, lo, (*fe)[7], ptr[31 -  2]);
+		ptr = *Dptr - pe;
+		ML0(hi, lo, (*fe)[0], ptr[31 - 16]);
+		MLA(hi, lo, (*fe)[1], ptr[31 - 14]);
+		MLA(hi, lo, (*fe)[2], ptr[31 - 12]);
+		MLA(hi, lo, (*fe)[3], ptr[31 - 10]);
+		MLA(hi, lo, (*fe)[4], ptr[31 -  8]);
+		MLA(hi, lo, (*fe)[5], ptr[31 -  6]);
+		MLA(hi, lo, (*fe)[6], ptr[31 -  4]);
+		MLA(hi, lo, (*fe)[7], ptr[31 -  2]);
 
-	ptr = *Dptr - po;
-	MLA(hi, lo, (*fo)[7], ptr[31 -  2]);
-	MLA(hi, lo, (*fo)[6], ptr[31 -  4]);
-	MLA(hi, lo, (*fo)[5], ptr[31 -  6]);
-	MLA(hi, lo, (*fo)[4], ptr[31 -  8]);
-	MLA(hi, lo, (*fo)[3], ptr[31 - 10]);
-	MLA(hi, lo, (*fo)[2], ptr[31 - 12]);
-	MLA(hi, lo, (*fo)[1], ptr[31 - 14]);
-	MLA(hi, lo, (*fo)[0], ptr[31 - 16]);
+		ptr = *Dptr - po;
+		MLA(hi, lo, (*fo)[7], ptr[31 -  2]);
+		MLA(hi, lo, (*fo)[6], ptr[31 -  4]);
+		MLA(hi, lo, (*fo)[5], ptr[31 -  6]);
+		MLA(hi, lo, (*fo)[4], ptr[31 -  8]);
+		MLA(hi, lo, (*fo)[3], ptr[31 - 10]);
+		MLA(hi, lo, (*fo)[2], ptr[31 - 12]);
+		MLA(hi, lo, (*fo)[1], ptr[31 - 14]);
+		MLA(hi, lo, (*fo)[0], ptr[31 - 16]);
 
         raw_sample = SHIFT(MLZ(hi, lo));
         raw_sample = scale(raw_sample);
         (*pcm2--) += (short int)raw_sample;
 
-	++fo;
+        ++fo;
       }
 
       Dptr++;
@@ -732,7 +735,7 @@ void  synth_full(struct mad_synth *synth, struct mad_frame const *frame,
 
     }  /* Channel For */
 
-    /* Render di un blocco */
+    /* Render block */
     render_sample_block(short_sample_buff, 32);
 
       phase = (phase + 1) % 16;
@@ -762,14 +765,17 @@ void synth_half(struct mad_synth *synth, struct mad_frame const *frame,
 
   phase = synth->phase;
 
+  if (nch > 2)
+    return;
+
   for (s = 0; s < ns; ++s)
   {
     memset (short_sample_buff, 0x00, sizeof(short_sample_buff));
 
     for (ch = 0; ch < nch; ++ch)
     {
-    sbsample = (void *)&frame->sbsample[ch];
-    filter   = &synth->filter[ch];
+      sbsample = (void *) &frame->sbsample[ch];
+      filter   = &synth->filter[ch];
       pcm1     = short_sample_buff;
 
       dct32((*sbsample)[s], phase >> 1,
@@ -814,45 +820,45 @@ void synth_half(struct mad_synth *synth, struct mad_frame const *frame,
 
       for (sb = 1; sb < 16; ++sb)
       {
-	++fe;
-	++Dptr;
+    	++fe;
+        ++Dptr;
 
-	/* D[32 - sb][i] == -D[sb][31 - i] */
+        /* D[32 - sb][i] == -D[sb][31 - i] */
 
-	  ptr = *Dptr + po;
-	  ML0(hi, lo, (*fo)[0], ptr[ 0]);
-	  MLA(hi, lo, (*fo)[1], ptr[14]);
-	  MLA(hi, lo, (*fo)[2], ptr[12]);
-	  MLA(hi, lo, (*fo)[3], ptr[10]);
-	  MLA(hi, lo, (*fo)[4], ptr[ 8]);
-	  MLA(hi, lo, (*fo)[5], ptr[ 6]);
-	  MLA(hi, lo, (*fo)[6], ptr[ 4]);
-	  MLA(hi, lo, (*fo)[7], ptr[ 2]);
-	  MLN(hi, lo);
+		ptr = *Dptr + po;
+		ML0(hi, lo, (*fo)[0], ptr[ 0]);
+		MLA(hi, lo, (*fo)[1], ptr[14]);
+		MLA(hi, lo, (*fo)[2], ptr[12]);
+		MLA(hi, lo, (*fo)[3], ptr[10]);
+		MLA(hi, lo, (*fo)[4], ptr[ 8]);
+		MLA(hi, lo, (*fo)[5], ptr[ 6]);
+		MLA(hi, lo, (*fo)[6], ptr[ 4]);
+		MLA(hi, lo, (*fo)[7], ptr[ 2]);
+		MLN(hi, lo);
 
-	  ptr = *Dptr + pe;
-	  MLA(hi, lo, (*fe)[7], ptr[ 2]);
-	  MLA(hi, lo, (*fe)[6], ptr[ 4]);
-	  MLA(hi, lo, (*fe)[5], ptr[ 6]);
-	  MLA(hi, lo, (*fe)[4], ptr[ 8]);
-	  MLA(hi, lo, (*fe)[3], ptr[10]);
-	  MLA(hi, lo, (*fe)[2], ptr[12]);
-	  MLA(hi, lo, (*fe)[1], ptr[14]);
-	  MLA(hi, lo, (*fe)[0], ptr[ 0]);
+		ptr = *Dptr + pe;
+		MLA(hi, lo, (*fe)[7], ptr[ 2]);
+		MLA(hi, lo, (*fe)[6], ptr[ 4]);
+		MLA(hi, lo, (*fe)[5], ptr[ 6]);
+		MLA(hi, lo, (*fe)[4], ptr[ 8]);
+		MLA(hi, lo, (*fe)[3], ptr[10]);
+		MLA(hi, lo, (*fe)[2], ptr[12]);
+		MLA(hi, lo, (*fe)[1], ptr[14]);
+		MLA(hi, lo, (*fe)[0], ptr[ 0]);
 
-        raw_sample = SHIFT(MLZ(hi, lo));
-        raw_sample = scale(raw_sample);
-        (*pcm1++) += (short int)raw_sample;
+		raw_sample = SHIFT(MLZ(hi, lo));
+		raw_sample = scale(raw_sample);
+		(*pcm1++) += (short int)raw_sample;
 
-	  ptr = *Dptr - pe;
-        ML0(hi, lo, (*fe)[0], ptr[31 - 16]);
-	  MLA(hi, lo, (*fe)[1], ptr[31 - 14]);
-	  MLA(hi, lo, (*fe)[2], ptr[31 - 12]);
-	  MLA(hi, lo, (*fe)[3], ptr[31 - 10]);
-	  MLA(hi, lo, (*fe)[4], ptr[31 -  8]);
-	  MLA(hi, lo, (*fe)[5], ptr[31 -  6]);
-	  MLA(hi, lo, (*fe)[6], ptr[31 -  4]);
-	  MLA(hi, lo, (*fe)[7], ptr[31 -  2]);
+		ptr = *Dptr - pe;
+		ML0(hi, lo, (*fe)[0], ptr[31 - 16]);
+		MLA(hi, lo, (*fe)[1], ptr[31 - 14]);
+		MLA(hi, lo, (*fe)[2], ptr[31 - 12]);
+		MLA(hi, lo, (*fe)[3], ptr[31 - 10]);
+		MLA(hi, lo, (*fe)[4], ptr[31 -  8]);
+		MLA(hi, lo, (*fe)[5], ptr[31 -  6]);
+		MLA(hi, lo, (*fe)[6], ptr[31 -  4]);
+		MLA(hi, lo, (*fe)[7], ptr[31 -  2]);
 
         ptr = *Dptr - po;
         MLA(hi, lo, (*fo)[7], ptr[31 -  2]);
@@ -868,7 +874,7 @@ void synth_half(struct mad_synth *synth, struct mad_frame const *frame,
         raw_sample = scale(raw_sample);
         (*pcm2--) += (short int)raw_sample;
 
-	++fo;
+        ++fo;
       }
 
       Dptr++;
@@ -892,7 +898,7 @@ void synth_half(struct mad_synth *synth, struct mad_frame const *frame,
     /* Block render */
     render_sample_block(short_sample_buff, 16);
 
-      phase = (phase + 1) % 16;
+    phase = (phase + 1) % 16;
 
   }/* Block For */
 }
@@ -913,8 +919,8 @@ void mad_synth_frame(struct mad_synth *synth, struct mad_frame const *frame)
   synth->pcm.samplerate = frame->header.samplerate;
   set_dac_sample_rate(synth->pcm.samplerate);
   synth->pcm.channels   = nch;
-//  synth->pcm.length     = 32 * ns;
-  synth->pcm.length     = 128 * ns;
+  synth->pcm.length     = 32 * ns;
+  //synth->pcm.length     = 128 * ns;
 
   synth_frame = synth_full;
 
