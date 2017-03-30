@@ -19,6 +19,7 @@ typedef struct
 {
     output_mode_t output_mode;
     int sample_rate;
+    float sample_rate_modifier;
     i2s_bits_per_sample_t bit_depth;
     i2s_port_t i2s_num;
 } renderer_config_t;

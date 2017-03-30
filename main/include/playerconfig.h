@@ -56,9 +56,9 @@ Same as ADD_DEL_BUFFPERSAMP but for systems without a big SPI RAM chip to buffer
 16-bit sounds out of the ESP, but it is possible to run this code without the codec. For
 this to work, instead of outputting a 2x16bit PCM sample the DAC can decode, we use the built-in
 8-Bit DAC.*/
-#define OUTPUT_MODE I2S // possible values: I2S, DAC_BUILT_IN
+#define CONFIG_OUTPUT_MODE I2S // possible values: I2S, DAC_BUILT_IN
 
-/* there is currently a bug in the SDK when using the DAC - this is a temporary
+/* there is currently a bug in the SDK when using the built-in DAC - this is a temporary
    workaround until the issue is fixed */
 // #define DAC_BUG_WORKAROUND
 

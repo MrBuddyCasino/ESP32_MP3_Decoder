@@ -21,36 +21,34 @@ static renderer_config_t *curr_config;
 
 
 // convert 16bit to 8bit and duplicate mono sample to both channels
-static short convert_16bit_mono_to_8bit_stereo(short s)
+static short convert_16bit_mono_to_8bit_stereo(short mono)
 {
-
-    // shift the 8 most significant bits, clear the upper 8 bit, duplicate
-    return ((unsigned short) s & 0xff00) | ((unsigned short) s >> 8);
+    unsigned short sample = (unsigned short) mono;
+    sample = (sample << 8 & 0xff00) | (((unsigned short) mono >> 8) & 0x00ff);
+    return sample;
 }
 
 // Reformat the 16-bit mono sample to a format we can send to I2S.
-static int convert_16bit_mono_to_16bit_stereo(short s)
+static int convert_16bit_mono_to_16bit_stereo(short mono)
 {
-
     //We can send a 32-bit sample to the I2S subsystem and the DAC will neatly split it up in 2
     //16-bit analog values, one for left and one for right.
 
     //Duplicate 16-bit sample to both the L and R channel
-    int sample = s;
-    sample = (sample) & 0x0000ffff;
-    sample = (sample << 16) | sample;
+    unsigned int sample = (unsigned short) mono;
+    sample = (sample << 16 & 0xffff0000) | ((unsigned short) mono);
     return sample;
 }
 
 static short convert_16bit_stereo_to_8bit_stereo(short left, short right)
 {
-    // mask left lower 8 bits, shift right upper bits and combine
-    return (left & 0xff00) | (right >> 8);
+    unsigned short sample = (unsigned short) left;
+    sample = (sample << 8 & 0xff00) | (((unsigned short) right >> 8) & 0x00ff);
+    return sample;
 }
 
 static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
 {
-    // mask left lower 8 bits, shift right upper bits and combine
     unsigned int sample = (unsigned short) left;
     sample = (sample << 16 & 0xffff0000) | ((unsigned short) right);
     return sample;
@@ -103,9 +101,14 @@ static void init_i2s_dac(renderer_config_t *config)
     i2s_set_pin(config->i2s_num, NULL);
 }
 
-/* render callback for the libmad stereo synth */
+/* render callback for the libmad synth */
 void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
 {
+    // if mono: just duplicate the left channel
+    if(num_channels == 1) {
+        sample_buff_ch1 = sample_buff_ch0;
+    }
+
     switch(curr_config->bit_depth) {
 
         case I2S_BITS_PER_SAMPLE_8BIT:
@@ -171,6 +174,9 @@ static int prevRate;
 void set_dac_sample_rate(int rate) {
     if(rate == prevRate) return;
     prevRate = rate;
+
+    // modifier will usually be 1.0
+    rate = rate * curr_config->sample_rate_modifier;
 
     ESP_LOGI(TAG, "setting sample rate to %d\n", rate);
     i2s_set_sample_rates(curr_config->i2s_num, rate);

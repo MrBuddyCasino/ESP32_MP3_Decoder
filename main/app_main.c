@@ -148,7 +148,13 @@ void app_main()
     renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
     renderer_config->i2s_num = I2S_NUM_0;
     renderer_config->sample_rate = 44100;
-    renderer_config->output_mode = OUTPUT_MODE;
+    renderer_config->sample_rate_modifier = 1.0;
+    renderer_config->output_mode = CONFIG_OUTPUT_MODE;
+
+#ifdef DAC_BUG_WORKAROUND
+    // DAC is consuming samples too fast by default
+    renderer_config->sample_rate_modifier = 0.0625;
+#endif
 
     // start radio
     web_radio_init(radio_config);
