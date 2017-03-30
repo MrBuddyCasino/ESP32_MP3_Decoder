@@ -1,7 +1,7 @@
 ESP32 MP3 decoder
 =======================
-This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the MP3
-stream and outputs the audio data to an I2S codec.
+This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the MP3 stream and outputs the audio data to an I2S codec or
+to an attached speaker.
 
 This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
@@ -9,15 +9,15 @@ This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP
 ## What Changed
 
 The SPI RAM is not needed anymore, the ESP32 has enough memory by itself.
-We can also use the built-in 8Bit DAC instead of the external I2S codec (not yet working).
+We can also use the built-in 8Bit DAC instead of the external I2S codec.
 
 ## Configuration
 
 Configuration options are kept in /main/include/playerconfig.h.
+To configure your radio station, just modify PLAY_URL.
 
 You can set wifi options via 'make menuconfig' or directly in playerconfig.h.
 
-To configure your radio station, just modify PLAY_URL.
 
 ## Downloading Required Software
 
@@ -38,8 +38,14 @@ Add /path/to/xtensa-esp32-elf/bin to your PATH:
     export PATH=/path/to/xtensa-esp32-elf/bin:$PATH
 
 ## Building
+1. navigate to the project directory
+2. type 'make menuconfig'
+3. configure your serial port
+4. configure wifi credentials
+5. 'save' and exit
 
-Execute 'make menuconfig' and configure your serial port, leave the rest at default settings and then execute 'make flash'.
+## Flashing
+Connect your serial cable and run 'make flash'. To see serial console output run 'make monitor'.
 
 ## Connecting the I2S codec
 
@@ -65,8 +71,14 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 
 ## Running without the I2S DAC
 
-The ESP32 has a built-in 8-Bit DAC that we can use. Unfortunately that part isn't working yet, patches welcome!
-The functionality is activated by changing the "#define OUTPUT_MODE" setting in playerconfig.h.
+The ESP32 has a built-in 8-Bit DAC that we can use. Unfortunately sound is distorted for unknown reasons, patches welcome!
+In playerconfig.h:
+1) change the "#define OUTPUT_MODE" setting to DAC_BUILT_IN
+2) uncomment DAC_BUG_WORKAROUND
+
+You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
+
+The ESP32 also supports PDM mode which should give better sound than the 8 bit DAC, but the SDK doesn't support it yet.
 
 ## Breadboard Example
 

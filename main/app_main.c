@@ -106,6 +106,35 @@ static void set_wifi_credentials()
     esp_wifi_connect();
 }
 
+static void start_web_radio()
+{
+    // init web radio
+    web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
+    radio_config->url = PLAY_URL;
+
+    // init player config
+    radio_config->player_config = calloc(1, sizeof(player_t));
+    radio_config->player_config->state = STOPPED;
+
+    // init renderer
+    radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));
+    renderer_config_t *renderer_config = radio_config->player_config->renderer_config;
+    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
+    renderer_config->i2s_num = I2S_NUM_0;
+    renderer_config->sample_rate = 44100;
+    renderer_config->sample_rate_modifier = 1.0;
+    renderer_config->output_mode = CONFIG_OUTPUT_MODE;
+
+#ifdef DAC_BUG_WORKAROUND
+    // DAC is consuming samples too fast by default
+    renderer_config->sample_rate_modifier = 0.0625;
+#endif
+
+    // start radio
+    web_radio_init(radio_config);
+    web_radio_start(radio_config);
+}
+
 /**
  * entry point
  */
@@ -134,31 +163,7 @@ void app_main()
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                         false, true, portMAX_DELAY);
 
-    // init web radio
-    web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
-    radio_config->url = PLAY_URL;
-
-    // init player config
-    radio_config->player_config = calloc(1, sizeof(player_t));
-    radio_config->player_config->state = STOPPED;
-
-    // init renderer
-    radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));
-    renderer_config_t *renderer_config = radio_config->player_config->renderer_config;
-    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
-    renderer_config->i2s_num = I2S_NUM_0;
-    renderer_config->sample_rate = 44100;
-    renderer_config->sample_rate_modifier = 1.0;
-    renderer_config->output_mode = CONFIG_OUTPUT_MODE;
-
-#ifdef DAC_BUG_WORKAROUND
-    // DAC is consuming samples too fast by default
-    renderer_config->sample_rate_modifier = 0.0625;
-#endif
-
-    // start radio
-    web_radio_init(radio_config);
-    web_radio_start(radio_config);
+    start_web_radio();
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 

@@ -7,5 +7,4 @@
 # please read the ESP-IDF documents if you need to do this.
 #
 
-# define makros which take wifi AP name and password from environment variables
-# CFLAGS += -D WIFI_AP_NAME=\"$AP_NAME\" -D WIFI_AP_PASS=\"$AP_PASS\" 
+# CFLAGS += -v 
