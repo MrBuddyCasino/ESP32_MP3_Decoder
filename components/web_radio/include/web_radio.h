@@ -10,6 +10,9 @@
 
 #include "audio_player.h"
 
+typedef struct {
+
+} radio_controls_t;
 
 typedef struct {
     char *url;

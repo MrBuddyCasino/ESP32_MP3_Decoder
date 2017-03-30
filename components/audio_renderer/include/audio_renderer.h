@@ -15,6 +15,7 @@ typedef enum {
     I2S, DAC_BUILT_IN, PDM
 } output_mode_t;
 
+
 typedef struct
 {
     output_mode_t output_mode;
@@ -25,10 +26,7 @@ typedef struct
 } renderer_config_t;
 
 
-/* mono callback for libmad */
-void render_sample_block_mono(short *sample_buff, int num_samples);
-
-/* stereo callback for libmad */
+/* render callback for libmad */
 void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels);
 
 void audio_renderer_init(renderer_config_t *config);

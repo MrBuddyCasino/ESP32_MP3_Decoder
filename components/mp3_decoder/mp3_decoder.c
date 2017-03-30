@@ -26,45 +26,46 @@
 #define TAG "decoder"
 //The mp3 read buffer size. 2106 bytes should be enough for up to 48KHz mp3s according to the sox sources. Used by libmad.
 #define READBUFSZ (2106)
-static char readBuf[READBUFSZ];
+static char read_buf[READBUFSZ];
 
-static long bufUnderrunCt;
-const uint32_t zero_sample[2] = { 0 };
+static long buf_underrun_cnt;
 
 
 static enum mad_flow input(struct mad_stream *stream, player_t *player) {
-    int n, i;
+    int readable_bytes, fifo_fill;
     int rem;
     //Shift remaining contents of buf to the front
     rem = stream->bufend - stream->next_frame;
-    memmove(readBuf, stream->next_frame, rem);
+    memmove(read_buf, stream->next_frame, rem);
 
-    while (rem < sizeof(readBuf)) {
-        n = (sizeof(readBuf) - rem);    //Calculate amount of bytes we need to fill buffer.
-        i = spiRamFifoFill();
-        if (i < n) n=i;                 //If the fifo can give us less, only take that amount
-        if (n==0) {                 //Can't take anything?
+    while (rem < sizeof(read_buf)) {
+
+        if(player->state == STOPPED)
+            return MAD_FLOW_STOP;
+
+        readable_bytes = (sizeof(read_buf) - rem);    // Calculate amount of bytes we need to fill buffer.
+        fifo_fill = spiRamFifoFill();
+        if (fifo_fill < readable_bytes)
+            readable_bytes = fifo_fill;                 // If the fifo can give us less, only take that amount
+
+        // Can't take anything?
+        if (readable_bytes == 0) {
             //Wait until there is enough data in the buffer. This only happens when the data feed
             //rate is too low, and shouldn't normally be needed!
-//          printf("Buf uflow, need %d bytes.\n", sizeof(readBuf)-rem);
-            bufUnderrunCt++;
+            printf("Buffer underflow, need %d bytes.\n", sizeof(read_buf) - rem);
+            buf_underrun_cnt++;
             //We both silence the output as well as wait a while by pushing silent samples into the i2s system.
             //This waits for about 200mS
-            //for (n=0; n<441*2; n++) {
-                // i2s_push_sample(I2S_NUM_0, (const char *) &zero_sample, portMAX_DELAY);
-            // }
-            i2s_zero_dma_buffer(I2S_NUM_0);
-            if(player->state == STOPPED)
-                return MAD_FLOW_STOP;
+            i2s_zero_dma_buffer(player->renderer_config->i2s_num);
         } else {
             //Read some bytes from the FIFO to re-fill the buffer.
-            spiRamFifoRead(&readBuf[rem], n);
-            rem += n;
+            spiRamFifoRead(&read_buf[rem], readable_bytes);
+            rem += readable_bytes;
         }
     }
 
     //Okay, let MAD decode the buffer.
-    mad_stream_buffer(stream, (unsigned char*) readBuf, sizeof(readBuf));
+    mad_stream_buffer(stream, (unsigned char*) read_buf, sizeof(read_buf));
     return MAD_FLOW_CONTINUE;
 }
 
@@ -97,7 +98,7 @@ void mp3_decoder_task(void *pvParameters)
     if (synth==NULL) { printf("MAD: malloc(synth) failed\n"); return; }
     if (frame==NULL) { printf("MAD: malloc(frame) failed\n"); return; }
 
-    bufUnderrunCt = 0;
+    buf_underrun_cnt = 0;
 
     printf("MAD: Decoder start.\n");
 
@@ -110,7 +111,7 @@ void mp3_decoder_task(void *pvParameters)
         input(stream, player); //calls mad_stream_buffer internally
         while(player->state != STOPPED) {
             r = mad_frame_decode(frame, stream);
-            if (r==-1) {
+            if (r == -1) {
                 if (!MAD_RECOVERABLE(stream->error)) {
                     //We're most likely out of buffer and need to call input() again
                     break;

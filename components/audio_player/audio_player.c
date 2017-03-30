@@ -26,6 +26,8 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
 
     // don't bother consuming bytes if stopped
     if(player->state == STOPPED) {
+        // TODO: add proper synchronization, this is just an assumption
+        mad_started = false;
         return -1;
     }
 
@@ -33,8 +35,8 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
         spiRamFifoWrite(recv_buf, bytes_read);
     }
 
-    // if (!mad_started && (spiRamFifoFree() < spiRamFifoLen()/2) && player->state == PLAYING)
-    if (!mad_started && player->state == PLAYING)
+    // seems 4 x 2106 (=READBUFSZ) is enough to prevent initial buffer underflow
+    if (!mad_started && player->state == PLAYING && (spiRamFifoFill() > (2106 * 4)) )
     {
         mad_started = true;
         //Buffer is filled. Start up the MAD task.
@@ -63,6 +65,12 @@ void audio_player_init(player_t *player)
 {
     // initialize I2S
     audio_renderer_init(player->renderer_config);
+}
+
+void audio_player_destroy(player_t *player)
+{
+    // halt I2S
+    audio_renderer_destroy(player->renderer_config);
 }
 
 void audio_player_start(player_t *player)
