@@ -191,8 +191,10 @@ void audio_renderer_start(renderer_config_t *config)
     // update global
     curr_config = config;
     state = RENDER_ACTIVE;
-    // i2s_zero_dma_buffer(config->i2s_num);
     i2s_start(config->i2s_num);
+
+    // buffer might contain noise
+    i2s_zero_dma_buffer(config->i2s_num);
 }
 
 void audio_renderer_stop(renderer_config_t *config)

@@ -5,21 +5,12 @@ to an attached speaker.
 
 This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
-
 ## What Changed
 
 The SPI RAM is not needed anymore, the ESP32 has enough memory by itself.
 We can also use the built-in 8Bit DAC instead of the external I2S codec.
 
-## Configuration
-
-Configuration options are kept in /main/include/playerconfig.h.
-To configure your radio station, just modify PLAY_URL.
-
-You can set wifi options via 'make menuconfig' or directly in playerconfig.h.
-
-
-## Downloading Required Software
+## Required Software
 
 Get the SDK:
 
@@ -37,15 +28,25 @@ Add /path/to/xtensa-esp32-elf/bin to your PATH:
 
     export PATH=/path/to/xtensa-esp32-elf/bin:$PATH
 
+## Configuration
+
+The serial port and wifi credentials are configured using make.
+Type 'make menuconfig' and 
+
+* configure your serial port in "Serial flasher config" submenu
+* set wifi credentials in the "Wifi Configuration" submenu
+* 'save', then exit
+
+To change the radio station URL, modify PLAY_URL in /main/include/playerconfig.h.
+
 ## Building
-1. navigate to the project directory
-2. type 'make menuconfig'
-3. configure your serial port
-4. configure wifi credentials
-5. 'save' and exit
+Just type 'make'.
 
 ## Flashing
 Connect your serial cable and run 'make flash'. To see serial console output run 'make monitor'.
+
+## Controls
+You can stop and start playback using the "Boot" button that is present on most development boards.
 
 ## Connecting the I2S codec
 
