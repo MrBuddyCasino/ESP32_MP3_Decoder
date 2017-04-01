@@ -5,5 +5,4 @@
  *      Author: michaelboeckling
  */
 
-
 void mp3_decoder_task(void *pvParameters);

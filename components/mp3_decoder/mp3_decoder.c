@@ -22,11 +22,19 @@
 #include "audio_renderer.h"
 #include "audio_player.h"
 #include "spiram_fifo.h"
+#include "mp3_decoder.h"
 
 #define TAG "decoder"
-//The mp3 read buffer size. 2106 bytes should be enough for up to 48KHz mp3s according to the sox sources. Used by libmad.
-#define READBUFSZ (2106)
-static char read_buf[READBUFSZ];
+
+// The theoretical maximum frame size is 2881 bytes,
+// MPEG 2.5 Layer II, 8000 Hz @ 160 kbps, with a padding slot plus 8 byte MAD_BUFFER_GUARD.
+#define MAX_FRAME_SIZE (2889)
+
+// The theoretical minimum frame size of 24 plus 8 byte MAD_BUFFER_GUARD.
+#define MIN_FRAME_SIZE (32)
+
+// read buffer
+static char read_buf[MAX_FRAME_SIZE];
 
 static long buf_underrun_cnt;
 
@@ -38,8 +46,10 @@ static enum mad_flow input(struct mad_stream *stream, player_t *player) {
     rem = stream->bufend - stream->next_frame;
     memmove(read_buf, stream->next_frame, rem);
 
-    while (rem < sizeof(read_buf)) {
+    //while (rem < sizeof(read_buf)) {
+    while (1) {
 
+        // stop requested, terminate immediately
         if(player->state == STOPPED)
             return MAD_FLOW_STOP;
 
@@ -50,6 +60,14 @@ static enum mad_flow input(struct mad_stream *stream, player_t *player) {
 
         // Can't take anything?
         if (readable_bytes == 0) {
+
+            // EOF reached, stop decoder when all frames have been consumed
+            if(player->state == FINISHED) {
+                // clear the buffer
+                i2s_zero_dma_buffer(player->renderer_config->i2s_num);
+                return MAD_FLOW_STOP;
+            }
+
             //Wait until there is enough data in the buffer. This only happens when the data feed
             //rate is too low, and shouldn't normally be needed!
             printf("Buffer underflow, need %d bytes.\n", sizeof(read_buf) - rem);
@@ -61,10 +79,14 @@ static enum mad_flow input(struct mad_stream *stream, player_t *player) {
             //Read some bytes from the FIFO to re-fill the buffer.
             spiRamFifoRead(&read_buf[rem], readable_bytes);
             rem += readable_bytes;
+
+            // break the loop if we have at least enough to decode the smallest possible frame
+            if(rem >= MIN_FRAME_SIZE)
+                break;
         }
     }
 
-    //Okay, let MAD decode the buffer.
+    // Okay, let MAD decode the buffer.
     mad_stream_buffer(stream, (unsigned char*) read_buf, sizeof(read_buf));
     return MAD_FLOW_CONTINUE;
 }
@@ -84,7 +106,7 @@ void mp3_decoder_task(void *pvParameters)
 {
     player_t *player = pvParameters;
 
-    int r;
+    int ret;
     struct mad_stream *stream;
     struct mad_frame *frame;
     struct mad_synth *synth;
@@ -108,10 +130,17 @@ void mp3_decoder_task(void *pvParameters)
     mad_synth_init(synth);
 
     while(player->state != STOPPED) {
-        input(stream, player); //calls mad_stream_buffer internally
+
+        // calls mad_stream_buffer internally
+        if (input(stream, player) == MAD_FLOW_STOP ) {
+            break;
+        }
+
+        // decode frames until MAD complains
         while(player->state != STOPPED) {
-            r = mad_frame_decode(frame, stream);
-            if (r == -1) {
+            // returns 0 or -1
+            ret = mad_frame_decode(frame, stream);
+            if (ret == -1) {
                 if (!MAD_RECOVERABLE(stream->error)) {
                     //We're most likely out of buffer and need to call input() again
                     break;

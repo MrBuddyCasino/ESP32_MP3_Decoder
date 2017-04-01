@@ -35,8 +35,10 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
         spiRamFifoWrite(recv_buf, bytes_read);
     }
 
-    // seems 4 x 2106 (=READBUFSZ) is enough to prevent initial buffer underflow
-    if (!mad_started && player->state == PLAYING && (spiRamFifoFill() > (2106 * 4)) )
+    int bytes_in_buf = spiRamFifoFill();
+
+    // seems 4k is enough to prevent initial buffer underflow
+    if (!mad_started && player->state == PLAYING && (bytes_in_buf > 4096) )
     {
         mad_started = true;
         //Buffer is filled. Start up the MAD task.
@@ -52,10 +54,9 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
 
     t = (t+1) & 255;
     if (t == 0) {
-        int bytes_in_buf = spiRamFifoFill();
-        uint8_t percentage = (bytes_in_buf * 100) / spiRamFifoLen();
         // printf("Buffer fill %d, buff underrun ct %d\n", spiRamFifoFill(), (int)bufUnderrunCt);
-        printf("Buffer fill %u%%, %d bytes\n", percentage, bytes_in_buf);
+        uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
+        printf("Buffer fill %u%%, %d bytes\n", fill_level, bytes_in_buf);
     }
 
     return 0;

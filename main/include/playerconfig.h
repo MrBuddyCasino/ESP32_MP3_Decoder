@@ -8,8 +8,12 @@
 
 
 /* Define stream URL here.*/
-#if 1
+#if 0
 #define PLAY_URL "http://ice1.somafm.com/illstreet-128-mp3"
+#endif
+
+#if 1
+#define PLAY_URL "http://mp3ad.egofm.c.nmdn.net/ps-egofmraw_192/livestream.mp3"
 #endif
 
 /* You can use something like this to connect to a local mpd server which has a configured

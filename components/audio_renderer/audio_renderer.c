@@ -168,7 +168,7 @@ void audio_renderer_init(renderer_config_t *config)
 {
     // update global
     curr_config = config;
-    state = STOPPED;
+    state = RENDER_STOPPED;
 
     switch (config->output_mode) {
         case I2S:
