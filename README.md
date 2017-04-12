@@ -81,6 +81,11 @@ You can now connect a speaker to ground and the pins 25 and 26 for the left and 
 
 The ESP32 also supports PDM mode which should give better sound than the 8 bit DAC, but the SDK doesn't support it yet.
 
+## More Information
+
+There is a thread over at the ESP32 forum:
+https://esp32.com/viewtopic.php?f=17&t=1026
+
 ## Breadboard Example
 
 I used the Watterott ESP-WROOM-32-Breakout, which is pin-compatible to the Espressif Core Board (DevKitC).

@@ -12,7 +12,6 @@
 #include "esp_log.h"
 #include "driver/i2s.h"
 
-#include "audio_player.h"
 #include "audio_renderer.h"
 
 #define TAG "renderer"
