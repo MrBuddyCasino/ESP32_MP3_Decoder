@@ -26,11 +26,11 @@ static renderer_config_t *curr_config;
 static renderer_state_t state;
 
 
-static short convert_16bit_stereo_to_8bit_stereo(short left, short right)
+static unsigned short convert_16bit_stereo_to_8bit_stereo(short left, short right)
 {
-    unsigned short sample = (unsigned short) left;
-    sample = (sample << 8 & 0xff00) | (((unsigned short) right >> 8) & 0x00ff);
-    return sample;
+    left = (left >> 8) + 0x80;
+    right = (right >> 8) + 0x80;
+    return (left << 8) | (right & 0xff);
 }
 
 static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
@@ -175,6 +175,7 @@ void audio_renderer_init(renderer_config_t *config)
             break;
 
         case DAC_BUILT_IN:
+            curr_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
             init_i2s_dac(config);
             break;
 
