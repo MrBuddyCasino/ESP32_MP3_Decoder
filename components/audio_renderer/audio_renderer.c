@@ -28,6 +28,8 @@ static renderer_state_t state;
 
 static unsigned short convert_16bit_stereo_to_8bit_stereo(short left, short right)
 {
+    // The right shift by 8 reduces the sample range to -0x80 to +0x7f.
+    // Adding 0x80 shifts this range to be between 0x00 and 0xff, which is what the built-in DAC expects.
     left = (left >> 8) + 0x80;
     right = (right >> 8) + 0x80;
     return (left << 8) | (right & 0xff);
