@@ -72,7 +72,7 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 
 ## Running without the I2S DAC
 
-The ESP32 has a built-in 8-Bit DAC that we can use. Unfortunately sound is distorted for unknown reasons, patches welcome!
+The ESP32 has a built-in 8-Bit DAC that we can use.
 In playerconfig.h:
 1) change the "#define OUTPUT_MODE" setting to DAC_BUILT_IN
 2) uncomment DAC_BUG_WORKAROUND
