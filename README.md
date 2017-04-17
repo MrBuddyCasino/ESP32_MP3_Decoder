@@ -35,6 +35,7 @@ Type 'make menuconfig' and
 
 * configure your serial port in "Serial flasher config" submenu
 * set wifi credentials in the "Wifi Configuration" submenu
+* in the "Audio" submenu, choose your output method
 * 'save', then exit
 
 To change the radio station URL, modify PLAY_URL in /main/include/playerconfig.h.
@@ -47,6 +48,9 @@ Connect your serial cable and run 'make flash'. To see serial console output run
 
 ## Controls
 You can stop and start playback using the "Boot" button that is present on most development boards.
+
+## UI
+You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> LED to pin 32. Its currently not doing much except blinking while wifi is connecting.
 
 ## Connecting the I2S codec
 
@@ -73,9 +77,7 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 ## Running without the I2S DAC
 
 The ESP32 has a built-in 8-Bit DAC that we can use.
-In playerconfig.h:
-1) change the "#define OUTPUT_MODE" setting to DAC_BUILT_IN
-2) uncomment DAC_BUG_WORKAROUND
+Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu. Make sure to enable `DAC_BUG_WORKAROUND`, too.
 
 You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
 
