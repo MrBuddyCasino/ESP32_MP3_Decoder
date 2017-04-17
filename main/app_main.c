@@ -14,6 +14,7 @@
 #include "http.h"
 #include "driver/i2s.h"
 
+#include "ui.h"
 #include "spiram_fifo.h"
 #include "audio_renderer.h"
 #include "web_radio.h"
@@ -115,21 +116,28 @@ static void start_web_radio()
     // init player config
     radio_config->player_config = calloc(1, sizeof(player_t));
     radio_config->player_config->state = STOPPED;
+    radio_config->player_config->buffer_pref = SAFE;
 
     // init renderer
     radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));
     renderer_config_t *renderer_config = radio_config->player_config->renderer_config;
-    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
-    //renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
+    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
     renderer_config->i2s_num = I2S_NUM_0;
     renderer_config->sample_rate = 44100;
     renderer_config->sample_rate_modifier = 1.0;
-    renderer_config->output_mode = CONFIG_OUTPUT_MODE;
+    renderer_config->output_mode = AUDIO_OUTPUT_MODE;
 
-#ifdef DAC_BUG_WORKAROUND
-    // DAC is consuming samples too fast by default
-    renderer_config->sample_rate_modifier = 0.0625;
+    if(renderer_config->output_mode == I2S_MERUS) {
+        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
+    }
+
+    if(renderer_config->output_mode == DAC_BUILT_IN) {
+        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
+#ifdef CONFIG_DAC_BUG_WORKAROUND
+        // DAC is consuming samples too fast by default
+        renderer_config->sample_rate_modifier = 0.0625;
 #endif
+    }
 
     // start radio
     web_radio_init(radio_config);
@@ -147,6 +155,11 @@ void app_main()
     EventGroupHandle_t wifi_event_group = xEventGroupCreate();
 
     nvs_flash_init();
+
+    // init UI
+    ui_init(GPIO_NUM_32);
+    ui_queue_event(UI_CONNECTING);
+
     initialise_wifi(wifi_event_group);
 
     // quick hack
@@ -163,6 +176,8 @@ void app_main()
     /* Wait for the callback to set the CONNECTED_BIT in the event group. */
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                         false, true, portMAX_DELAY);
+
+    ui_queue_event(UI_CONNECTED);
 
     start_web_radio();
 

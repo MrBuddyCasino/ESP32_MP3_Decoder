@@ -11,17 +11,21 @@
 #include <sys/types.h>
 #include "audio_renderer.h"
 
-int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data);
+int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_data);
 
 
 typedef enum {
     IDLE, PLAYING, BUFFER_UNDERRUN, FINISHED, STOPPED
 } player_state_t;
 
+typedef enum {
+    FAST, SAFE
+} buffer_pref_t;
 
 typedef struct {
     volatile player_state_t state;
     renderer_config_t *renderer_config;
+    buffer_pref_t buffer_pref;
 } player_t;
 
 

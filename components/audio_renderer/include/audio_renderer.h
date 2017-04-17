@@ -12,7 +12,7 @@
 #include "driver/i2s.h"
 
 typedef enum {
-    I2S, DAC_BUILT_IN, PDM
+    I2S, I2S_MERUS, DAC_BUILT_IN, PDM
 } output_mode_t;
 
 

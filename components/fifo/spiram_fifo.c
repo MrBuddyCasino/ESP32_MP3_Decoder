@@ -104,7 +104,7 @@ void spiRamFifoRead(char *buff, int len) {
 }
 
 //Write bytes to the FIFO
-void spiRamFifoWrite(char *buff, int buffLen) {
+void spiRamFifoWrite(const char *buff, int buffLen) {
 	int n;
 	while (buffLen > 0) {
 		n = buffLen;

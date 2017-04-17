@@ -15,3 +15,31 @@ config WIFI_PASSWORD
 		Can be left blank if the network has no security set.
 
 endmenu
+
+
+menu "Audio"
+
+choice
+    prompt "Select Audio Output"
+    default I2S
+    help
+        This option selects the audio output.
+
+    config AUDIO_OUTPUT_MODE_I2S
+        bool "Generic I2S"
+    config AUDIO_OUTPUT_MODE_I2S_MERUS
+        bool "Merus Audio I2S"
+    config AUDIO_OUTPUT_MODE_DAC_BUILT_IN
+        bool "Built-In DAC"
+endchoice
+
+config AUDIO_OUTPUT_MODE
+    int
+    default 0 if AUDIO_OUTPUT_MODE_I2S
+    default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
+    default 2 if AUDIO_OUTPUT_MODE_DAC_BUILT_IN
+
+config DAC_BUG_WORKAROUND
+	bool "Activate workaround when using Built-In DAC"
+
+endmenu

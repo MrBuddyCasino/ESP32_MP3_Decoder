@@ -13,6 +13,7 @@
 #include "spiram_fifo.h"
 #include "freertos/task.h"
 #include "mp3_decoder.h"
+#include "controls.h"
 
 #define PRIO_MAD configMAX_PRIORITIES - 2
 
@@ -20,7 +21,7 @@
 static int t;
 static bool mad_started = false;
 /* pushes bytes into the FIFO queue, starts decoder task if necessary */
-int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
+int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_data)
 {
     player_t *player = user_data;
 
@@ -36,9 +37,11 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
     }
 
     int bytes_in_buf = spiRamFifoFill();
+    uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
 
     // seems 4k is enough to prevent initial buffer underflow
-    if (!mad_started && player->state == PLAYING && (bytes_in_buf > 4096) )
+    bool buffer_ok = (player->buffer_pref == FAST) ? (fill_level > 20) : (fill_level > 90);
+    if (!mad_started && player->state == PLAYING && buffer_ok)
     {
         mad_started = true;
         //Buffer is filled. Start up the MAD task.
@@ -55,7 +58,6 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read, void *user_data)
     t = (t+1) & 255;
     if (t == 0) {
         // printf("Buffer fill %d, buff underrun ct %d\n", spiRamFifoFill(), (int)bufUnderrunCt);
-        uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
         printf("Buffer fill %u%%, %d bytes\n", fill_level, bytes_in_buf);
     }
 

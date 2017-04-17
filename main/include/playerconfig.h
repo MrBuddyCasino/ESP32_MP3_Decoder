@@ -29,6 +29,9 @@ rate! */
 #define PLAY_URL "http://meuk.spritesserver.nl/Ii.Romanzeandante.mp3"
 #endif
 
+// defined via 'make menuconfig'
+#define AUDIO_OUTPUT_MODE CONFIG_AUDIO_OUTPUT_MODE
+
 
 
 /*Playing a real-time MP3 stream has the added complication of clock differences: if the sample
@@ -55,16 +58,6 @@ the music sounding higher/lower due to network issues.*/
 Same as ADD_DEL_BUFFPERSAMP but for systems without a big SPI RAM chip to buffer mp3 data in.*/
 #define ADD_DEL_BUFFPERSAMP_NOSPIRAM (1500)
 
-
-/* Connecting an I2S codec to the ESP is the best way to get nice
-16-bit sounds out of the ESP, but it is possible to run this code without the codec. For
-this to work, instead of outputting a 2x16bit PCM sample the DAC can decode, we use the built-in
-8-Bit DAC.*/
-#define CONFIG_OUTPUT_MODE I2S // possible values: I2S, DAC_BUILT_IN
-
-/* there is currently a bug in the SDK when using the built-in DAC - this is a temporary
-   workaround until the issue is fixed */
-// #define DAC_BUG_WORKAROUND
 
 
 /*While a large (tens to hundreds of K) buffer is necessary for Internet streams, on a

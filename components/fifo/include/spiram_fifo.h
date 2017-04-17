@@ -3,7 +3,7 @@
 
 int  spiRamFifoInit();
 void  spiRamFifoRead(char *buff, int len);
-void  spiRamFifoWrite(char *buff, int len);
+void  spiRamFifoWrite(const char *buff, int len);
 int  spiRamFifoFill();
 int  spiRamFifoFree();
 long  spiRamGetOverrunCt();
