@@ -3,6 +3,9 @@
  *
  *  Created on: 12.03.2017
  *      Author: michaelboeckling
+ *
+ *  Rev. 17.4.2017/Jorgen Kragh Jakobsen
+ *      Added 32 bit entry for i2s output and setup i2c call for Merus Audio power audio amp. 
  */
 
 #include <stdbool.h>
@@ -12,7 +15,11 @@
 #include "esp_log.h"
 #include "driver/i2s.h"
 
+#include "MerusAudio.h"                 // Provides i2c read/write to audio amplifier     
+#include "ma120x0.h"                    // Register map and macros    
+
 #include "audio_renderer.h"
+
 
 #define TAG "renderer"
 
@@ -66,6 +73,38 @@ static void init_i2s(renderer_config_t *config)
     i2s_driver_install(config->i2s_num, &i2s_config, 0, NULL);
     i2s_set_pin(config->i2s_num, &pin_config);
 }
+
+
+
+/* 
+ * Output audio data to I2S and setup MerusAudio digital power amplifier 
+ */ 
+  
+static void init_ma120(uint8_t vol)
+{
+    printf("Setup MA120x0\n");
+    
+	i2c_master_init();	
+	
+	const uint8_t MA_hw_version__a = 127;          
+	uint8_t res = ma_read_byte(MA_hw_version__a);
+	printf("Hardware version: 0x%02x\n",res);
+    
+	ma_write_byte(MA_i2s_format__a,8);                     // Set i2s_std_format, set audio_proc_enable   
+    ma_write_byte(MA_vol_db_master__a,vol);                // Set vol_db_master low 
+
+	res = ma_read_byte(MA_error__a);
+	printf("Errors : 0x%02x\n",res);
+    
+	res = ma_read_byte(116);
+	printf("Audio in mode : 0x%02x\n",res);
+    
+	ma_write_byte(45,0x34);                                // Clean any errors on device    
+	ma_write_byte(45,0x30);
+	
+	printf("Init done\n");  
+}
+
 
 /*
  * Output audio without I2S codec via built-in 8-Bit DAC.
@@ -140,9 +179,25 @@ void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num
             break;
 
         case I2S_BITS_PER_SAMPLE_32BIT:
-            // TODO
-            ESP_LOGE(TAG, "32 bit unsupported");
-            break;
+            for (int i=0; i< num_samples; i++) { 
+			  
+			  if (state == RENDER_STOPPED)
+			     break;
+			  
+			  char high0 = sample_buff_ch0[i]>>8;
+			  char mid0  = sample_buff_ch0[i] & 0xff; 
+			  char high1 = sample_buff_ch1[i]>>8;
+			  char mid1  = sample_buff_ch1[i] & 0xff; 
+              const char samp32[8] = {0,0,mid0,high0,0,0,mid1,high1};
+			  
+			  int bytes_pushed = i2s_push_sample(curr_config->i2s_num,  (char *)&samp32, delay);
+              
+			  // DMA buffer full - retry
+              if(bytes_pushed == 0) {
+                    i--;
+              }
+			}
+	        break;
     }
 }
 
@@ -174,7 +229,8 @@ void audio_renderer_init(renderer_config_t *config)
     switch (config->output_mode) {
         case I2S:
             init_i2s(config);
-            break;
+            init_ma120(0x50);           // setup ma120x0p and initial volume 
+	        break;
 
         case DAC_BUILT_IN:
             curr_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;

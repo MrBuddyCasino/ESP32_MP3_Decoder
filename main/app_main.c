@@ -119,7 +119,8 @@ static void start_web_radio()
     // init renderer
     radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));
     renderer_config_t *renderer_config = radio_config->player_config->renderer_config;
-    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
+    renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
+    //renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
     renderer_config->i2s_num = I2S_NUM_0;
     renderer_config->sample_rate = 44100;
     renderer_config->sample_rate_modifier = 1.0;
