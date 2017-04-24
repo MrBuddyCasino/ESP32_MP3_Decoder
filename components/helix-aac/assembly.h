@@ -576,6 +576,7 @@ static __inline Word64 MADD64(Word64 sum64, int x, int y)
  */
 #elif defined(__GNUC__) && defined(__xtensa__)
 
+#include <stdlib.h>
 typedef long long Word64;
 
 static __inline__ int MULSHIFT32(int x, int y)
@@ -601,12 +602,14 @@ static inline short CLIPTOSHORT(int x)
 clip to [-2^n, 2^n-1], valid range of n = [1, 30]
 //TODO (FB) Is there a better way ?
 */
+
 #define CLIP_2N(y, n) { \
     int sign = (y) >> 31;  \
     if (sign != (y) >> (n))  { \
         (y) = sign ^ ((1 << (n)) - 1); \
     } \
 }
+
 
 /* From coder.h, ORIGINAL:
  do y <<= n, clipping to range [-2^30, 2^30 - 1] (i.e. output has one guard bit)
@@ -622,7 +625,16 @@ clip to [-2^n, 2^n-1], valid range of n = [1, 30]
     }
 
 
+static __inline int FASTABS(int x)
+{
+    int sign;
 
+    sign = x >> (sizeof(int) * 8 - 1);
+    x ^= sign;
+    x -= sign;
+
+    return x;
+}
 #define FASTABS(x) abs(x) //FB
 #define CLZ(x) __builtin_clz(x) //FB
 
