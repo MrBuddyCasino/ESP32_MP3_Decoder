@@ -78,7 +78,7 @@ void web_radio_gpio_handler_task(void *pvParams)
             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
 
             switch(config->player_config->state) {
-                case PLAYING:
+                case STARTED:
                     printf("stopping player\n");
                     web_radio_stop(config);
                     break;

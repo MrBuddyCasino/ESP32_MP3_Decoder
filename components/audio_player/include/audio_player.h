@@ -15,7 +15,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_d
 
 
 typedef enum {
-    IDLE, PLAYING, BUFFER_UNDERRUN, FINISHED, STOPPED
+    IDLE, STARTED, BUFFER_UNDERRUN, FINISHED, STOPPED
 } player_state_t;
 
 typedef enum {

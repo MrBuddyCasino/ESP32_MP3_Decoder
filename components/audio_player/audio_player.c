@@ -41,7 +41,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_d
 
     // seems 4k is enough to prevent initial buffer underflow
     bool buffer_ok = (player->buffer_pref == FAST) ? (fill_level > 20) : (fill_level > 90);
-    if (!mad_started && player->state == PLAYING && buffer_ok)
+    if (!mad_started && player->state == STARTED && buffer_ok)
     {
         mad_started = true;
         //Buffer is filled. Start up the MAD task.
@@ -79,7 +79,7 @@ void audio_player_destroy(player_t *player)
 void audio_player_start(player_t *player)
 {
     audio_renderer_start(player->renderer_config);
-    player->state = PLAYING;
+    player->state = STARTED;
 }
 
 void audio_player_stop(player_t *player)

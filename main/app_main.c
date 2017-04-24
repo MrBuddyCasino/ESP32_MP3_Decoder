@@ -20,6 +20,7 @@
 #include "web_radio.h"
 #include "playerconfig.h"
 #include "app_main.h"
+#include "../components/mdns_task/include/mdns_task.h"
 
 
 #define WIFI_LIST_NUM   10
@@ -172,6 +173,9 @@ void app_main()
         while(1);
     }
     printf("\n\nHardware initialized. Waiting for network.\n");
+
+    /* start mDNS */
+    xTaskCreatePinnedToCore(&mdns_task, "mdns_task", 2048, wifi_event_group, 5, NULL, 0);
 
     /* Wait for the callback to set the CONNECTED_BIT in the event group. */
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
