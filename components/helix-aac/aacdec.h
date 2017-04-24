@@ -68,6 +68,8 @@
 #
 #elif defined(_SOLARIS) && !defined(__GNUC__)
 #
+#elif defined(__GNUC__) && defined(__xtensa__)
+#
 #else
 #error No platform defined. See valid options in aacdec.h
 #endif
