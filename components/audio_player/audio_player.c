@@ -13,13 +13,14 @@
 #include "spiram_fifo.h"
 #include "freertos/task.h"
 #include "mp3_decoder.h"
+#include "aac_decoder.h"
 #include "controls.h"
 
 #define PRIO_MAD configMAX_PRIORITIES - 2
 
 
 static int t;
-static bool mad_started = false;
+static bool decoder_started = false;
 /* pushes bytes into the FIFO queue, starts decoder task if necessary */
 int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_data)
 {
@@ -28,7 +29,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_d
     // don't bother consuming bytes if stopped
     if(player->state == STOPPED) {
         // TODO: add proper synchronization, this is just an assumption
-        mad_started = false;
+        decoder_started = false;
         return -1;
     }
 
@@ -41,16 +42,17 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_d
 
     // seems 4k is enough to prevent initial buffer underflow
     bool buffer_ok = (player->buffer_pref == FAST) ? (fill_level > 20) : (fill_level > 90);
-    if (!mad_started && player->state == STARTED && buffer_ok)
+    if (!decoder_started && player->state == STARTED && buffer_ok)
     {
-        mad_started = true;
+        decoder_started = true;
         //Buffer is filled. Start up the MAD task.
         // TODO: 6300 not enough?
-        if (xTaskCreatePinnedToCore(&mp3_decoder_task, "tskmad", 8000, player, PRIO_MAD, NULL, 1) != pdPASS)
+        // if (xTaskCreatePinnedToCore(&mp3_decoder_task, "mp3_decoder_task", 8000, player, PRIO_MAD, NULL, 1) != pdPASS)
+        if (xTaskCreatePinnedToCore(&aac_decoder_task, "aac_decoder_task", 8000, player, PRIO_MAD, NULL, 1) != pdPASS)
         {
-            printf("ERROR creating MAD task! Out of memory?\n");
+            printf("ERROR creating decoder task! Out of memory?\n");
         } else {
-            printf("created MAD task\n");
+            printf("created decoder task\n");
         }
     }
 
