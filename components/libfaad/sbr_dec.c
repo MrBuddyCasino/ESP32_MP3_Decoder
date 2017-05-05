@@ -1,19 +1,19 @@
 /*
 ** FAAD2 - Freeware Advanced Audio (AAC) Decoder including SBR decoding
 ** Copyright (C) 2003-2005 M. Bakker, Nero AG, http://www.nero.com
-**  
+**
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ** GNU General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software 
+** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** Any non-GPL usage of this software or parts of this software is strictly
@@ -166,7 +166,7 @@ void sbrDecodeEnd(sbr_info *sbr)
         }
 
 #ifdef PS_DEC
-        if (sbr->ps != NULL) 
+        if (sbr->ps != NULL)
             ps_free(sbr->ps);
 #endif
 
@@ -205,7 +205,7 @@ void sbrReset(sbr_info *sbr)
 
     memset(sbr->Xsbr[0], 0, (sbr->numTimeSlotsRate+sbr->tHFGen)*64 * sizeof(qmf_t));
     memset(sbr->Xsbr[1], 0, (sbr->numTimeSlotsRate+sbr->tHFGen)*64 * sizeof(qmf_t));
-    
+
     sbr->GQ_ringbuf_index[0] = 0;
     sbr->GQ_ringbuf_index[1] = 0;
     sbr->header_count = 0;
@@ -602,8 +602,8 @@ uint8_t sbrDecodeSingleFramePS(sbr_info *sbr, real_t *left_channel, real_t *righ
     uint8_t l, k;
     uint8_t dont_process = 0;
     uint8_t ret = 0;
-    ALIGN qmf_t X_left[38][64] = {{0}};
-    ALIGN qmf_t X_right[38][64] = {{0}}; /* must set this to 0 */
+    ALIGN qmf_t X_left[38][64] = {0};
+    ALIGN qmf_t X_right[38][64] = {0}; /* must set this to 0 */
 
     if (sbr == NULL)
         return 20;
