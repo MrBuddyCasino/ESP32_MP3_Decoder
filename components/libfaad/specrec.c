@@ -1,19 +1,19 @@
 /*
 ** FAAD2 - Freeware Advanced Audio (AAC) Decoder including SBR decoding
 ** Copyright (C) 2003-2005 M. Bakker, Nero AG, http://www.nero.com
-**  
+**
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ** GNU General Public License for more details.
-** 
+**
 ** You should have received a copy of the GNU General Public License
-** along with this program; if not, write to the Free Software 
+** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** Any non-GPL usage of this software or parts of this software is strictly
@@ -425,7 +425,7 @@ uint8_t window_grouping_info(NeAACDecStruct *hDecoder, ic_stream *ics)
     }
 }
 
-/* iquant() *
+/* iquant() */
 /* output = sign(input)*abs(input)^(4/3) */
 /**/
 static INLINE real_t iquant(int16_t q, const real_t *tab, uint8_t *error)
@@ -622,10 +622,10 @@ static uint8_t quant_to_spec(NeAACDecStruct *hDecoder,
                     wb = wa + bin;
 
                     spec_data[wb+0] = iquant(quant_data[k+0], tab, &error) * scf;
-                    spec_data[wb+1] = iquant(quant_data[k+1], tab, &error) * scf;                        
-                    spec_data[wb+2] = iquant(quant_data[k+2], tab, &error) * scf;                        
+                    spec_data[wb+1] = iquant(quant_data[k+1], tab, &error) * scf;
+                    spec_data[wb+2] = iquant(quant_data[k+2], tab, &error) * scf;
                     spec_data[wb+3] = iquant(quant_data[k+3], tab, &error) * scf;
-                        
+
 #else
                     real_t iq0 = iquant(quant_data[k+0], tab, &error);
                     real_t iq1 = iquant(quant_data[k+1], tab, &error);
