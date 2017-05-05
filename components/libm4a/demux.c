@@ -33,6 +33,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 // #include "codeclib.h"
 
@@ -44,7 +45,7 @@
 #else
 #define DEBUGF(...)
 #endif
-
+#define DEBUGF printf
 typedef struct
 {
     stream_t *stream;
@@ -280,11 +281,17 @@ static bool read_chunk_stsd(qtmovie_t *qtmovie, size_t chunk_len)
               return false;
           }
 
-          j=qtmovie->stream->ci->curpos+sub_chunk_len-8;
+          // j=qtmovie->stream->ci->curpos+sub_chunk_len-8;
+          j = qtmovie->stream->buf->read_pos + sub_chunk_len - 8;
           if (read_chunk_esds(qtmovie,sub_chunk_len)) {
-             if (j!=qtmovie->stream->ci->curpos) {
-               DEBUGF("curpos=%ld, j=%d - Skipping %ld bytes\n",qtmovie->stream->ci->curpos,j,j-qtmovie->stream->ci->curpos);
-               stream_skip(qtmovie->stream,j-qtmovie->stream->ci->curpos);
+             // if (j!=qtmovie->stream->ci->curpos) {
+             if (j != qtmovie->stream->buf->read_pos) {
+               // DEBUGF("curpos=%ld, j=%d - Skipping %ld bytes\n",qtmovie->stream->buf->read_pos,j,j-qtmovie->stream->buf->read_pos);
+               DEBUGF("curpos=%d, sub_chunk_len=%d, j=%d - Skipping %d bytes\n", (int)qtmovie->stream->buf->read_pos, sub_chunk_len, j, j - (int) qtmovie->stream->buf->read_pos);
+               // stream_skip(qtmovie->stream,j-qtmovie->stream->ci->curpos);
+               stream_skip(qtmovie->stream, j - (int) qtmovie->stream->buf->read_pos);
+               // TODO hotfix
+               // stream_skip(qtmovie->stream, 4);
              }
              got_codec_data = true;
              entry_remaining-=sub_chunk_len;
@@ -535,6 +542,7 @@ static bool read_chunk_stbl(qtmovie_t *qtmovie, size_t chunk_len)
         }
 
         sub_chunk_id = stream_read_uint32(qtmovie->stream);
+        DEBUGF("Found a sub_chunk %c%c%c%c, length=%d\n",SPLITFOURCC(sub_chunk_id), sub_chunk_len);
 
         switch (sub_chunk_id)
         {
@@ -568,8 +576,8 @@ static bool read_chunk_stbl(qtmovie_t *qtmovie, size_t chunk_len)
             }
             break;
         default:
-            /*DEBUGF("(stbl) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));*/
+            DEBUGF("(stbl) unknown chunk id: %c%c%c%c\n",
+                   SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
         }
 
@@ -618,16 +626,19 @@ static bool read_chunk_minf(qtmovie_t *qtmovie, size_t chunk_len)
 
         sub_chunk_id = stream_read_uint32(qtmovie->stream);
 
+        printf("Found a sub_chunk %c%c%c%c, length=%d\n",SPLITFOURCC(sub_chunk_id), sub_chunk_len);
+
         switch (sub_chunk_id)
         {
         case MAKEFOURCC('s','t','b','l'):
             if (!read_chunk_stbl(qtmovie, sub_chunk_len)) {
+                DEBUGF("read_chunk_stbl failed");
                 return false;
             }
             break;
         default:
-            /*DEBUGF("(minf) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));*/
+            DEBUGF("(minf) unknown chunk id: %c%c%c%c\n",
+                   SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
@@ -655,17 +666,19 @@ static bool read_chunk_mdia(qtmovie_t *qtmovie, size_t chunk_len)
         }
 
         sub_chunk_id = stream_read_uint32(qtmovie->stream);
+        printf("Found a sub_chunk %c%c%c%c, length=%d\n",SPLITFOURCC(sub_chunk_id), sub_chunk_len);
 
         switch (sub_chunk_id)
         {
         case MAKEFOURCC('m','i','n','f'):
             if (!read_chunk_minf(qtmovie, sub_chunk_len)) {
+               DEBUGF("read_chunk_minf failed");
                return false;
             }
             break;
         default:
-            /*DEBUGF("(mdia) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));*/
+            DEBUGF("(mdia) unknown chunk id: %c%c%c%c\n",
+                   SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
@@ -694,17 +707,19 @@ static bool read_chunk_trak(qtmovie_t *qtmovie, size_t chunk_len)
         }
 
         sub_chunk_id = stream_read_uint32(qtmovie->stream);
+        printf("Found a sub_chunk %c%c%c%c, length=%d\n",SPLITFOURCC(sub_chunk_id), sub_chunk_len);
 
         switch (sub_chunk_id)
         {
         case MAKEFOURCC('m','d','i','a'):
             if (!read_chunk_mdia(qtmovie, sub_chunk_len)) {
+               DEBUGF("read_chunk_mdia failed");
                return false;
             }
             break;
         default:
-            /*DEBUGF("(trak) unknown chunk id: %c%c%c%c\n",
-                    SPLITFOURCC(sub_chunk_id));*/
+            DEBUGF("(trak) unknown chunk id: %c%c%c%c\n",
+                    SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
@@ -733,17 +748,24 @@ static bool read_chunk_moov(qtmovie_t *qtmovie, size_t chunk_len)
         }
 
         sub_chunk_id = stream_read_uint32(qtmovie->stream);
+        printf("Found moov->%c%c%c%c, length=%d\n",SPLITFOURCC(sub_chunk_id), sub_chunk_len);
 
         switch (sub_chunk_id)
         {
         case MAKEFOURCC('t','r','a','k'):
             if (!read_chunk_trak(qtmovie, sub_chunk_len)) {
+               DEBUGF("read_chunk_trak failed");
                return false;
             }
             break;
+
+        case MAKEFOURCC('u','d','t','a'):
+            stream_skip(qtmovie->stream, sub_chunk_len - 8);
+            break;
+
         default:
-            /*DEBUGF("(moov) unknown chunk id: %c%c%c%c\n",
-                    SPLITFOURCC(sub_chunk_id));*/
+            DEBUGF("(moov) unknown chunk id: %c%c%c%c\n",
+                    SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
@@ -777,6 +799,7 @@ int qtmovie_read(stream_t *file, demux_res_t *demux_res)
         chunk_len = stream_read_uint32(qtmovie.stream);
         if (stream_eof(qtmovie.stream))
         {
+            DEBUGF("stream_eof reached\n");
             if(qtmovie.res->mdat_offset == 0 || qtmovie.res->format == 0)
                 return 0;
             stream_seek(qtmovie.stream, qtmovie.res->mdat_offset);
@@ -790,7 +813,7 @@ int qtmovie_read(stream_t *file, demux_res_t *demux_res)
         }
         chunk_id = stream_read_uint32(qtmovie.stream);
 
-        //DEBUGF("Found a chunk %c%c%c%c, length=%d\n",SPLITFOURCC(chunk_id),chunk_len);
+        DEBUGF("Found a chunk %c%c%c%c, length=%d\n",SPLITFOURCC(chunk_id),chunk_len);
         switch (chunk_id)
         {
         case MAKEFOURCC('f','t','y','p'):
@@ -798,6 +821,7 @@ int qtmovie_read(stream_t *file, demux_res_t *demux_res)
             break;
         case MAKEFOURCC('m','o','o','v'):
             if (!read_chunk_moov(&qtmovie, chunk_len)) {
+               DEBUGF("read_chunk_moov failed");
                return 0;
             }
             break;
@@ -819,8 +843,9 @@ int qtmovie_read(stream_t *file, demux_res_t *demux_res)
         case MAKEFOURCC('f','r','e','e'):
             stream_skip(qtmovie.stream, chunk_len - 8);
             break;
+
         default:
-            //DEBUGF("(top) unknown chunk id: %c%c%c%c\n",SPLITFOURCC(chunk_id));
+            DEBUGF("(top) unknown chunk id: %c%c%c%c\n",SPLITFOURCC(chunk_id));
             return 0;
         }
 

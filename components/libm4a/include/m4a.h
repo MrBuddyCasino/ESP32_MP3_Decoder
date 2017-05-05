@@ -22,7 +22,8 @@
 #ifndef _M4A_H
 #define _M4A_H
 
-#include <codecs.h>
+// #include <codecs.h>
+#include "common.h"
 #include <inttypes.h>
 
 /* AAC codecdata appears to always be less than 8 bytes - see
@@ -39,19 +40,20 @@
 #define MAX_CODECDATA_SIZE  64
 
 typedef struct {
-  struct codec_api* ci;
+  // struct codec_api* ci;
+  buffer_t *buf;
   int eof;
 } stream_t;
 
 typedef uint32_t fourcc_t;
 
-typedef struct 
+typedef struct
 {
     uint32_t first_chunk;
     uint32_t num_samples;
 } sample_to_chunk_t;
 
-typedef struct 
+typedef struct
 {
     uint32_t sample_count;
     uint32_t sample_duration;
@@ -73,10 +75,10 @@ typedef struct
 
     sample_to_chunk_t *sample_to_chunk;
     uint32_t num_sample_to_chunks;
-    
+
     sample_offset_t *lookup_table;
     uint32_t num_lookup_table;
-    
+
     time_to_sample_t *time_to_sample;
     uint32_t num_time_to_samples;
 
@@ -126,10 +128,11 @@ void stream_seek(stream_t *stream, size_t offset);
 
 int stream_eof(stream_t *stream);
 
-void stream_create(stream_t *stream,struct codec_api* ci);
+// void stream_create(stream_t *stream,struct codec_api* ci);
+void stream_create(stream_t *stream,buffer_t *buf);
 unsigned int get_sample_offset(demux_res_t *demux_res, uint32_t sample);
 unsigned int m4a_seek (demux_res_t* demux_res, stream_t* stream,
-    uint32_t sound_sample_loc, uint32_t* sound_samples_done, 
+    uint32_t sound_sample_loc, uint32_t* sound_samples_done,
     int* current_sample);
 unsigned int m4a_seek_raw (demux_res_t* demux_res, stream_t* stream,
     uint32_t file_loc, uint32_t* sound_samples_done, int* current_sample);
