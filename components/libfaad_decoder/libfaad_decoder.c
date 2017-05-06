@@ -98,9 +98,6 @@ void libfaac_decoder_task(void *pvParameters)
     intptr_t param;
     bool empty_first_frame = false;
 
-    // uint32_t codecdata_len;
-    // uint8_t codecdata[MAX_CODECDATA_SIZE];
-
     buffer_t buf = {
         .base=0,
         .read_pos=0,
@@ -112,25 +109,14 @@ void libfaac_decoder_task(void *pvParameters)
     buf.read_pos = buf.base;
     buf.fill_pos = buf.base;
 
-    container_format_t container = CONTAINER_MP4;
-
     /* Clean and initialize decoder structures */
     memset(&demux_res, 0, sizeof(demux_res));
 
     stream_create(&input_stream, &buf);
-    print_buffer(&buf);
     fill_read_buffer(&buf);
 
-    // why parse headers?
-    if(strstr((char*) buf.read_pos, "audio/aac") != NULL) {
-        container = CONTAINER_RAW;
-    }
-    else if(strstr((char*) buf.read_pos, "application/octet-stream") != NULL) {
-        container = CONTAINER_RAW;
-    }
-    ESP_LOGI(TAG, "container format: %d", container);
-
     // skip headers
+    /*
     char *hdr_offfset = strstr((char*) buf.read_pos, "\r\n\r\n");
     if (hdr_offfset) {
         hdr_offfset += 4;
@@ -145,9 +131,11 @@ void libfaac_decoder_task(void *pvParameters)
     } else {
         // error
     }
+    */
 
+    ESP_LOGI(TAG, "content_type: %d", player->content_type);
 
-    if(container == CONTAINER_MP4) {
+    if(player->content_type == AUDIO_MP4) {
         /* if qtmovie_read returns successfully, the stream is up to
          * the movie data, which can be used directly by the decoder */
          if (!qtmovie_read(&input_stream, &demux_res)) {
@@ -157,35 +145,35 @@ void libfaac_decoder_task(void *pvParameters)
          } else {
              ESP_LOGI(TAG, "qtmovie_read success");
          }
-    } else {
+    } else if(player->content_type == AUDIO_AAC || player->content_type == OCTET_STREAM) {
         memcpy(demux_res.codecdata, buf.read_pos, 64);
         demux_res.codecdata_len = 64;
+    } else {
+        ESP_LOGE(TAG, "unsupported content-type: %d", player->content_type);
+        return;
     }
 
     /* initialise the sound converter */
     decoder = NeAACDecOpen();
-
     if (!decoder) {
-        printf("FAAD: Decode open error\n");
+        ESP_LOGE(TAG, "FAAD: Decode open error");
         return ;
     }
-
-    ESP_LOGI(TAG, "%s, line %d.", __func__, __LINE__);
 
     NeAACDecConfigurationPtr conf = NeAACDecGetCurrentConfiguration(decoder);
     conf->outputFormat = FAAD_FMT_16BIT; /* irrelevant, we don't convert */
     NeAACDecSetConfiguration(decoder, conf);
 
 
-    if(container == CONTAINER_RAW) {
-        err = NeAACDecInit(decoder, demux_res.codecdata, demux_res.codecdata_len, &samp_rate, &chan);
-    } else {
+    if(player->content_type == AUDIO_MP4) {
         err = NeAACDecInit2(decoder, demux_res.codecdata, demux_res.codecdata_len, &samp_rate, &chan);
+    } else {
+        err = NeAACDecInit(decoder, demux_res.codecdata, demux_res.codecdata_len, &samp_rate, &chan);
     }
 
     if (err) {
         //LOGF("FAAD: DecInit: %d, %d\n", err, decoder->object_type);
-        printf("FAAD: DecInit: %d\n", err);
+        ESP_LOGE(TAG, "FAAD: DecInit: %d", err);
         return ;
     }
 
