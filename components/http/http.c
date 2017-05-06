@@ -15,14 +15,21 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
+#include "url_parser.h"
 #include "http.h"
 
 
 #define TAG "http_client"
 
 
-int http_client_get(char *host, uint16_t port, char *path, stream_reader_cb callback, void *user_data)
+/**
+ * @brief simple http_get
+ * see https://github.com/nodejs/http-parser for callback usage
+ */
+int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 {
+    url_t *url = url_create(uri);
+
     const struct addrinfo hints = {
         .ai_family = AF_INET,
         .ai_socktype = SOCK_STREAM,
@@ -30,9 +37,9 @@ int http_client_get(char *host, uint16_t port, char *path, stream_reader_cb call
     struct addrinfo *res;
     struct in_addr *addr;
     char port_str[6]; // stack allocated
-    snprintf(port_str, 6, "%d", port);
+    snprintf(port_str, 6, "%d", url->port);
 
-    int err = getaddrinfo(host, port_str, &hints, &res);
+    int err = getaddrinfo(url->host, port_str, &hints, &res);
     if(err != ESP_OK || res == NULL) {
         ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
         return err;
@@ -70,7 +77,7 @@ int http_client_get(char *host, uint16_t port, char *path, stream_reader_cb call
 
     // write http request
     char *request;
-    if(asprintf(&request, "%s%s%s%s%s", "GET ", path, " HTTP/1.0\r\nHost: ", host, "\r\n\r\n") < 0)
+    if(asprintf(&request, "%s%s%s%s%s", "GET ", url->path, " HTTP/1.0\r\nHost: ", url->host, "\r\n\r\n") < 0)
     {
         return ESP_FAIL;
     }
@@ -89,15 +96,29 @@ int http_client_get(char *host, uint16_t port, char *path, stream_reader_cb call
     /* Read HTTP response */
     char recv_buf[64];
     bzero(recv_buf, sizeof(recv_buf));
-    ssize_t numBytes;
+    ssize_t recved;
 
-    esp_err_t cont = 0;
+    /* intercept on_headers_complete() */
+
+    /* parse response */
+    http_parser parser;
+    http_parser_init(&parser, HTTP_RESPONSE);
+    parser.data = user_data;
+
+    esp_err_t nparsed = 0;
     do {
-        numBytes = read(sock, recv_buf, sizeof(recv_buf)-1);
-        cont = (*callback)(recv_buf, numBytes, user_data);
-    } while(numBytes > 0 && cont == 0);
+        recved = read(sock, recv_buf, sizeof(recv_buf)-1);
 
-    ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d", numBytes, errno);
+        // using http parser causes stack overflow somtimes - disable for now
+        nparsed = http_parser_execute(&parser, callbacks, recv_buf, recved);
+
+        // invoke on_body cb directly
+        // nparsed = callbacks->on_body(&parser, recv_buf, recved);
+    } while(recved > 0 && nparsed >= 0);
+
+    free(url);
+
+    ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d", recved, errno);
     close(sock);
     ESP_LOGI(TAG, "socket closed");
 

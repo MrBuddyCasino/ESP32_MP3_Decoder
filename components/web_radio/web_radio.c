@@ -5,8 +5,9 @@
  *      Author: michaelboeckling
  */
 
-
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,39 +23,95 @@
 
 #define TAG "web_radio"
 
-static TaskHandle_t *reader_task;
+typedef enum
+{
+    HDR_CONTENT_TYPE = 1
+} header_field_t;
+
+static header_field_t curr_header_field = 0;
+static content_type_t content_type = 0;
+static bool headers_complete = false;
+
+static int on_header_field_cb(http_parser *parser, const char *at, size_t length)
+{
+    // convert to lower case
+    unsigned char *c = (unsigned char *) at;
+    for (; *c; ++c)
+        *c = tolower(*c);
+
+    if (strstr(at, "content-type")) {
+        curr_header_field = HDR_CONTENT_TYPE;
+    } else {
+        curr_header_field = 0;
+    }
+
+    return 0;
+}
+
+static int on_header_value_cb(http_parser *parser, const char *at, size_t length)
+{
+    if (curr_header_field == HDR_CONTENT_TYPE) {
+        if (strstr(at, "application/octet-stream")) content_type = OCTET_STREAM;
+        if (strstr(at, "audio/aac")) content_type = AUDIO_AAC;
+        if (strstr(at, "audio/mp4")) content_type = AUDIO_MP4;
+        if (strstr(at, "audio/x-m4a")) content_type = AUDIO_MP4;
+        if (strstr(at, "audio/mpeg")) content_type = AUDIO_MPEG;
+
+        if(content_type == MIME_UNKNOWN) {
+            ESP_LOGE(TAG, "unknown content-type: %s", at);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int on_headers_complete_cb(http_parser *parser)
+{
+    headers_complete = true;
+
+    player_t *player_config = parser->data;
+    player_config->content_type = content_type;
+    audio_player_start(player_config);
+
+    return 0;
+}
+
+static int on_body_cb(http_parser* parser, const char *at, size_t length)
+{
+    return audio_stream_consumer(at, length, parser->data);
+}
 
 static void http_get_task(void *pvParameters)
 {
     web_radio_t *radio_conf = pvParameters;
 
-    /* parse URL */
-    url_t *url = url_create(radio_conf->url);
+    /* configure callbacks */
+    http_parser_settings callbacks = { 0 };
+    callbacks.on_body = on_body_cb;
+    callbacks.on_header_field = on_header_field_cb;
+    callbacks.on_header_value = on_header_value_cb;
+    callbacks.on_headers_complete = on_headers_complete_cb;
 
     // blocks until end of stream
-    int result = http_client_get(
-            url->host, url->port, url->path,
-            audio_stream_consumer,
+    int result = http_client_get(radio_conf->url, &callbacks,
             radio_conf->player_config);
 
-    if(result != 0) {
+    if (result != 0) {
         ESP_LOGE(TAG, "http_client_get error");
     } else {
         ESP_LOGI(TAG, "http_client_get completed");
     }
     // ESP_LOGI(TAG, "http_client_get stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 
-    url_free(url);
-
     vTaskDelete(NULL);
 }
 
-
 void web_radio_start(web_radio_t *config)
 {
-    audio_player_start(config->player_config);
     // start reader task
-    xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 2048, config, 20, reader_task, 0);
+    xTaskCreatePinnedToCore(&http_get_task, "http_get_task", 2048, config, 20,
+    NULL, 0);
 }
 
 void web_radio_stop(web_radio_t *config)
@@ -65,7 +122,6 @@ void web_radio_stop(web_radio_t *config)
     // reader task terminates itself
 }
 
-
 void web_radio_gpio_handler_task(void *pvParams)
 {
     gpio_handler_param_t *params = pvParams;
@@ -73,11 +129,11 @@ void web_radio_gpio_handler_task(void *pvParams)
     xQueueHandle gpio_evt_queue = params->gpio_evt_queue;
 
     uint32_t io_num;
-    for(;;) {
-        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+    for (;;) {
+        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
 
-            switch(config->player_config->state) {
+            switch (config->player_config->state) {
                 case STARTED:
                     printf("stopping player\n");
                     web_radio_stop(config);
@@ -95,7 +151,6 @@ void web_radio_gpio_handler_task(void *pvParams)
     }
 }
 
-
 void web_radio_init(web_radio_t *config)
 {
     controls_init(web_radio_gpio_handler_task, 2048, config);
@@ -107,5 +162,3 @@ void web_radio_destroy(web_radio_t *config)
     controls_destroy(config);
     audio_player_destroy(config->player_config);
 }
-
-

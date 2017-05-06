@@ -196,15 +196,18 @@ void audio_renderer_init(renderer_config_t *config)
 
     switch (config->output_mode) {
         case I2S:
+            ESP_LOGI(TAG, "init I2S on port %d", config->i2s_num);
             init_i2s(config);
 	        break;
 
         case I2S_MERUS:
+            ESP_LOGI(TAG, "init I2S_MERUS on port %d", config->i2s_num);
             init_i2s(config);
-            init_ma120(0x50);           // setup ma120x0p and initial volume
+            init_ma120(0x50); // setup ma120x0p and initial volume
             break;
 
         case DAC_BUILT_IN:
+            ESP_LOGI(TAG, "init DAC_BUILTIN on port %d", config->i2s_num);
             curr_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
             init_i2s_dac(config);
             break;
@@ -221,6 +224,8 @@ void audio_renderer_start(renderer_config_t *config)
     // update global
     curr_config = config;
     state = RENDER_ACTIVE;
+
+    i2s_stop(config->i2s_num);
     i2s_start(config->i2s_num);
 
     // buffer might contain noise

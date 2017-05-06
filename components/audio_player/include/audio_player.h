@@ -22,10 +22,16 @@ typedef enum {
     FAST, SAFE
 } buffer_pref_t;
 
+typedef enum
+{
+    MIME_UNKNOWN = 1, OCTET_STREAM, AUDIO_AAC, AUDIO_MP4, AUDIO_MPEG
+} content_type_t;
+
 typedef struct {
     volatile player_state_t state;
     renderer_config_t *renderer_config;
     buffer_pref_t buffer_pref;
+    content_type_t content_type;
 } player_t;
 
 
