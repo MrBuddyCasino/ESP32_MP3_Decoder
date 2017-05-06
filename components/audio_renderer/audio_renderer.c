@@ -225,7 +225,6 @@ void audio_renderer_start(renderer_config_t *config)
     curr_config = config;
     state = RENDER_ACTIVE;
 
-    i2s_stop(config->i2s_num);
     i2s_start(config->i2s_num);
 
     // buffer might contain noise

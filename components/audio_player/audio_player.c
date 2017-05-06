@@ -39,14 +39,14 @@ static int start_decoder_task(player_t *player)
 
         case AUDIO_AAC:
         case AUDIO_MP4:
+        case OCTET_STREAM: // probably .aac
             task_func = libfaac_decoder_task;
             task_name = "libfaac_decoder_task";
             stack_depth = 55000;
             break;
 
         default:
-            ESP_LOGE(TAG, "unknown mime type: %d", player->content_type)
-            ;
+            ESP_LOGE(TAG, "unknown mime type: %d", player->content_type);
             return -1;
     }
 
