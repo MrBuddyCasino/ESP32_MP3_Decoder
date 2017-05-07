@@ -30,7 +30,7 @@ static int start_decoder_task(player_t *player)
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
-    switch (player->content_type) {
+    switch (player->media_stream->content_type) {
         case AUDIO_MPEG:
             task_func = mp3_decoder_task;
             task_name = "mp3_decoder_task";
@@ -46,7 +46,7 @@ static int start_decoder_task(player_t *player)
             break;
 
         default:
-            ESP_LOGE(TAG, "unknown mime type: %d", player->content_type);
+            ESP_LOGE(TAG, "unknown mime type: %d", player->media_stream->content_type);
             return -1;
     }
 

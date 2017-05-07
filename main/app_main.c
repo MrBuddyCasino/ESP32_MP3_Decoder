@@ -118,6 +118,7 @@ static void start_web_radio()
     radio_config->player_config = calloc(1, sizeof(player_t));
     radio_config->player_config->state = STOPPED;
     radio_config->player_config->buffer_pref = SAFE;
+    radio_config->player_config->media_stream = calloc(1, sizeof(media_stream_t));
 
     // init renderer
     radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));

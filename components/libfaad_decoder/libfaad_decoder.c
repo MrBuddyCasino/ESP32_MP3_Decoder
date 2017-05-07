@@ -1,6 +1,8 @@
 /*
  * libfaad_decoder.c
  *
+ * based on the Rockbox aac.c decoder by Dave Chapman
+ *
  *  Created on: 26.04.2017
  *      Author: michaelboeckling
  */
@@ -16,9 +18,12 @@
 #include "driver/i2s.h"
 
 #include "neaacdec.h"
+//#include "../libfaad/common.h"
+//typedef float real_t;
+//typedef real_t complex_t[2];
+//#include "../libfaad/structs.h"
 
 #include "common.h"
-#include "mp4_parser.h"
 #include "m4a.h"
 #include "audio_renderer.h"
 #include "audio_player.h"
@@ -52,18 +57,31 @@ void print_buffer(buffer_t *buf)
 }
 
 
-static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
+typedef enum {
+    CONTAINER_RAW = 1,
+    CONTAINER_MP4 = 2
+} container_format_t;
+
+
+void print_frame_info(NeAACDecFrameInfo *frame_info)
 {
-    unsigned int sample = (unsigned short) left;
-    sample = (sample << 16 & 0xffff0000) | ((unsigned short) right);
-    return sample;
+    if ((frame_info->error == 0) && (frame_info->samples > 0)) {
+      printf("decoded %lu samples\n", frame_info->samples);
+      printf("  bytesconsumed: %lu\n", frame_info->bytesconsumed);
+      printf("  channels: %d\n", frame_info->channels);
+      printf("  samplerate: %lu\n", frame_info->samplerate);
+      printf("  sbr: %u\n", frame_info->sbr);
+      printf("  object_type: %u\n", frame_info->object_type);
+      printf("  header_type: %u\n", frame_info->header_type);
+      printf("  num_front_channels: %u\n", frame_info->num_front_channels);
+      printf("  num_side_channels: %u\n", frame_info->num_side_channels);
+      printf("  num_back_channels: %u\n", frame_info->num_back_channels);
+      printf("  num_lfe_channels: %u\n", frame_info->num_lfe_channels);
+      printf("  ps: %u\n", frame_info->ps);
+      printf("\n");
+    }
 }
 
-
-typedef enum {
-    CONTAINER_RAW = 0,
-    CONTAINER_MP4 = 1
-} container_format_t;
 
 void libfaac_decoder_task(void *pvParameters)
 {
@@ -99,12 +117,8 @@ void libfaac_decoder_task(void *pvParameters)
     bool empty_first_frame = false;
 
     buffer_t buf = {
-        .base=0,
-        .read_pos=0,
-        .fill_pos=0,
         .len=FAAD_BYTE_BUFFER_SIZE
     };
-
     buf.base = calloc(FAAD_BYTE_BUFFER_SIZE, sizeof(uint8_t));
     buf.read_pos = buf.base;
     buf.fill_pos = buf.base;
@@ -115,27 +129,13 @@ void libfaac_decoder_task(void *pvParameters)
     stream_create(&input_stream, &buf);
     fill_read_buffer(&buf);
 
-    // skip headers
-    /*
-    char *hdr_offfset = strstr((char*) buf.read_pos, "\r\n\r\n");
-    if (hdr_offfset) {
-        hdr_offfset += 4;
-        buf.read_pos = (uint8_t *) hdr_offfset;
-        ESP_LOGI(TAG, "%s, line %d, buf.read_pos %p, hdr_offfset %p", __func__, __LINE__, buf.read_pos, hdr_offfset);
-        ESP_LOGI(TAG, "%.*s", buf.len, buf.base);
+    for(uint8_t *i = buf.read_pos; i < buf.fill_pos; i++)
+        printf("%X", (*i));
 
-        //for(int i = 0; i < buf.fill_pos - buf.read_pos; i++)
-        //    printf("%c", buf.read_pos[i]);
+    content_type_t content_type =  player->media_stream->content_type;
+    ESP_LOGI(TAG, "content_type: %d", content_type);
 
-        print_buffer(&buf);
-    } else {
-        // error
-    }
-    */
-
-    ESP_LOGI(TAG, "content_type: %d", player->content_type);
-
-    if(player->content_type == AUDIO_MP4) {
+    if(content_type == AUDIO_MP4) {
         /* if qtmovie_read returns successfully, the stream is up to
          * the movie data, which can be used directly by the decoder */
          if (!qtmovie_read(&input_stream, &demux_res)) {
@@ -145,11 +145,11 @@ void libfaac_decoder_task(void *pvParameters)
          } else {
              ESP_LOGI(TAG, "qtmovie_read success");
          }
-    } else if(player->content_type == AUDIO_AAC || player->content_type == OCTET_STREAM) {
+    } else if(content_type == AUDIO_AAC || content_type == OCTET_STREAM) {
         memcpy(demux_res.codecdata, buf.read_pos, 64);
         demux_res.codecdata_len = 64;
     } else {
-        ESP_LOGE(TAG, "unsupported content-type: %d", player->content_type);
+        ESP_LOGE(TAG, "unsupported content-type: %d", content_type);
         return;
     }
 
@@ -161,11 +161,24 @@ void libfaac_decoder_task(void *pvParameters)
     }
 
     NeAACDecConfigurationPtr conf = NeAACDecGetCurrentConfiguration(decoder);
-    conf->outputFormat = FAAD_FMT_16BIT; /* irrelevant, we don't convert */
+    switch(player->renderer_config->bit_depth) {
+        case I2S_BITS_PER_SAMPLE_8BIT:
+        case I2S_BITS_PER_SAMPLE_16BIT:
+            conf->outputFormat = FAAD_FMT_16BIT;
+            break;
+        case I2S_BITS_PER_SAMPLE_24BIT:
+            conf->outputFormat = FAAD_FMT_24BIT;
+            break;
+        case I2S_BITS_PER_SAMPLE_32BIT:
+            conf->outputFormat = FAAD_FMT_32BIT;
+            break;
+    }
+    conf->defObjectType = LC;
+    conf->defSampleRate = 44100;
     NeAACDecSetConfiguration(decoder, conf);
 
 
-    if(player->content_type == AUDIO_MP4) {
+    if(content_type == AUDIO_MP4) {
         err = NeAACDecInit2(decoder, demux_res.codecdata, demux_res.codecdata_len, &samp_rate, &chan);
     } else {
         err = NeAACDecInit(decoder, demux_res.codecdata, demux_res.codecdata_len, &samp_rate, &chan);
@@ -191,11 +204,11 @@ void libfaac_decoder_task(void *pvParameters)
     // asm("break.n 1");
 
     ESP_LOGI(TAG, "sample rate: %lu channels: %u", samp_rate, chan);
-    //i2s_set_clk(I2S_NUM_0, samp_rate, I2S_BITS_PER_SAMPLE_16BIT, chan);
+    i2s_set_clk(player->renderer_config->i2s_num, samp_rate, player->renderer_config->bit_depth, chan);
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
-    while (true) {
+    while (!player->media_stream->eof) {
 
         /* Request the required number of bytes from the input buffer */
         fill_read_buffer(&buf);
@@ -203,25 +216,6 @@ void libfaac_decoder_task(void *pvParameters)
         /* Decode one block - returned samples will be host-endian */
         ret = NeAACDecDecode(decoder, &frame_info, buf.read_pos,
                 buf.fill_pos - buf.read_pos);
-
-        /*
-        if ((frame_info.error == 0) && (frame_info.samples > 0)) {
-          // do what you need to do with the decoded samples
-          printf("decoded %lu samples\n", frame_info.samples);
-          printf("  bytesconsumed: %lu\n", frame_info.bytesconsumed);
-          printf("  channels: %d\n", frame_info.channels);
-          printf("  samplerate: %lu\n", frame_info.samplerate);
-          printf("  sbr: %u\n", frame_info.sbr);
-          printf("  object_type: %u\n", frame_info.object_type);
-          printf("  header_type: %u\n", frame_info.header_type);
-          printf("  num_front_channels: %u\n", frame_info.num_front_channels);
-          printf("  num_side_channels: %u\n", frame_info.num_side_channels);
-          printf("  num_back_channels: %u\n", frame_info.num_back_channels);
-          printf("  num_lfe_channels: %u\n", frame_info.num_lfe_channels);
-          printf("  ps: %u\n", frame_info.ps);
-          printf("\n");
-        }
-        */
 
         /* NeAACDecDecode may sometimes return NULL without setting error. */
         if (ret == NULL || frame_info.error > 0) {
@@ -238,7 +232,7 @@ void libfaac_decoder_task(void *pvParameters)
         framelength = frame_samples - lead_trim;
 
         int16_t *pcm_buf = ret;
-        i2s_write_bytes(I2S_NUM_0, pcm_buf, frame_info.samples * 2, 1000 / portTICK_PERIOD_MS);
+        i2s_write_bytes(player->renderer_config->i2s_num, pcm_buf, frame_info.samples * 2, 1000 / portTICK_PERIOD_MS);
 
         // render
         // max delay: 50ms instead of portMAX_DELAY
@@ -266,5 +260,6 @@ void libfaac_decoder_task(void *pvParameters)
         // ESP_LOGI(TAG, "stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     }
 
+    NeAACDecClose(decoder);
 }
 

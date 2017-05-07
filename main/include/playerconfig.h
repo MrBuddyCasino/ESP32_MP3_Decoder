@@ -12,18 +12,13 @@
 #define PLAY_URL "http://ice1.somafm.com/illstreet-128-mp3"
 #endif
 
+/* as AAC stream */
+#if 1
+#define PLAY_URL "http://ice1.somafm.com/illstreet-128-aac"
+#endif
+
 #if 0
 #define PLAY_URL "http://mp3ad.egofm.c.nmdn.net/ps-egofmraw_192/livestream.mp3"
-#endif
-
-/* AAC stream */
-#if 0
-#define PLAY_URL "http://streaming214.radionomy.com:80/Abalone"
-#endif
-
-/* AAC file */
-#if 1
-#define PLAY_URL "http://dev.boeckling.net/dl/101-air-la_femme_dargent.aac"
 #endif
 
 /* You can use something like this to connect to a local mpd server which has a configured

@@ -28,10 +28,15 @@ typedef enum
 } content_type_t;
 
 typedef struct {
+    content_type_t content_type;
+    bool eof;
+} media_stream_t;
+
+typedef struct {
     volatile player_state_t state;
     renderer_config_t *renderer_config;
     buffer_pref_t buffer_pref;
-    content_type_t content_type;
+    media_stream_t *media_stream;
 } player_t;
 
 

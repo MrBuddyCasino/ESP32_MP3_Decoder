@@ -129,7 +129,7 @@ void mp3_decoder_task(void *pvParameters)
     mad_frame_init(frame);
     mad_synth_init(synth);
 
-    while(player->state != STOPPED) {
+    while(player->state != STOPPED && !player->media_stream->eof) {
 
         // calls mad_stream_buffer internally
         if (input(stream, player) == MAD_FLOW_STOP ) {

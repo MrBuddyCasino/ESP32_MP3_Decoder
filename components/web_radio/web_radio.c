@@ -39,10 +39,9 @@ static int on_header_field_cb(http_parser *parser, const char *at, size_t length
     for (; *c; ++c)
         *c = tolower(*c);
 
+    curr_header_field = 0;
     if (strstr(at, "content-type")) {
         curr_header_field = HDR_CONTENT_TYPE;
-    } else {
-        curr_header_field = 0;
     }
 
     return 0;
@@ -69,9 +68,11 @@ static int on_header_value_cb(http_parser *parser, const char *at, size_t length
 static int on_headers_complete_cb(http_parser *parser)
 {
     headers_complete = true;
-
     player_t *player_config = parser->data;
-    player_config->content_type = content_type;
+
+    player_config->media_stream->content_type = content_type;
+    player_config->media_stream->eof = false;
+
     audio_player_start(player_config);
 
     return 0;
@@ -80,6 +81,14 @@ static int on_headers_complete_cb(http_parser *parser)
 static int on_body_cb(http_parser* parser, const char *at, size_t length)
 {
     return audio_stream_consumer(at, length, parser->data);
+}
+
+static int on_message_complete_cb(http_parser *parser)
+{
+    player_t *player_config = parser->data;
+    player_config->media_stream->eof = true;
+
+    return 0;
 }
 
 static void http_get_task(void *pvParameters)
@@ -92,6 +101,7 @@ static void http_get_task(void *pvParameters)
     callbacks.on_header_field = on_header_field_cb;
     callbacks.on_header_value = on_header_value_cb;
     callbacks.on_headers_complete = on_headers_complete_cb;
+    callbacks.on_message_complete = on_message_complete_cb;
 
     // blocks until end of stream
     int result = http_client_get(radio_conf->url, &callbacks,
