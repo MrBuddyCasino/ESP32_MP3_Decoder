@@ -1,14 +1,16 @@
-ESP32 MP3 decoder
+ESP32 Web Radio
 =======================
-This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the MP3 stream and outputs the audio data to an I2S codec or
-to an attached speaker.
+This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the stream and plays the sound via I2S codec or
+to a speaker directly connected to the DAC pins.
 
-This project is a port of Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
+Supported formats:
 
-## What Changed
+* MP3
+* AAC (Beta)
 
-The SPI RAM is not needed anymore, the ESP32 has enough memory by itself.
-We can also use the built-in 8Bit DAC instead of the external I2S codec.
+## Origin
+
+This project is based on Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
 ## Required Software
 
@@ -82,6 +84,12 @@ Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu. Make sur
 You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
 
 The ESP32 also supports PDM mode which should give better sound than the 8 bit DAC, but the SDK doesn't support it yet.
+
+## Known Issues
+
+* AAC not yet working with builtin DAC
+* AAC MP4 parser has a memory bug
+* Not all AAC streams playable
 
 ## More Information
 
