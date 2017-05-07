@@ -3,10 +3,10 @@ ESP32 Web Radio
 This is a simple web radio streamer. It connects to a web radio station via wifi, decodes the stream and plays the sound via I2S codec or
 to a speaker directly connected to the DAC pins.
 
-Supported formats:
+Features:
 
-* MP3
-* AAC (Beta)
+* Decodes MP3 and AAC (Beta)
+* Bluetooth Speaker mode
 
 ## Origin
 
@@ -53,6 +53,14 @@ You can stop and start playback using the "Boot" button that is present on most 
 
 ## UI
 You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> LED to pin 32. Its currently not doing much except blinking while wifi is connecting.
+
+## Bluetooth Speaker Mode
+
+In `make menuconfig`, enable`Component config > Bluetooth > Classic Bluetooth`, save and exit. 
+
+In `/main/app_main.c`, comment out `start_web_radio()` and uncomment `bt_speaker_start()`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER".
+
+Only 16 bit I2S output works right now.
 
 ## Connecting the I2S codec
 
