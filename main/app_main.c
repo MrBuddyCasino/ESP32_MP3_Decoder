@@ -20,7 +20,8 @@
 #include "web_radio.h"
 #include "playerconfig.h"
 #include "app_main.h"
-#include "../components/mdns_task/include/mdns_task.h"
+#include "mdns_task.h"
+#include "bt_speaker.h"
 
 
 #define WIFI_LIST_NUM   10
@@ -108,21 +109,10 @@ static void set_wifi_credentials()
     esp_wifi_connect();
 }
 
-static void start_web_radio()
+static renderer_config_t *create_renderer_config()
 {
-    // init web radio
-    web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
-    radio_config->url = PLAY_URL;
+    renderer_config_t *renderer_config = calloc(1, sizeof(renderer_config_t));
 
-    // init player config
-    radio_config->player_config = calloc(1, sizeof(player_t));
-    radio_config->player_config->state = STOPPED;
-    radio_config->player_config->buffer_pref = SAFE;
-    radio_config->player_config->media_stream = calloc(1, sizeof(media_stream_t));
-
-    // init renderer
-    radio_config->player_config->renderer_config = calloc(1, sizeof(renderer_config_t));
-    renderer_config_t *renderer_config = radio_config->player_config->renderer_config;
     renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
     renderer_config->i2s_num = I2S_NUM_0;
     renderer_config->sample_rate = 44100;
@@ -140,6 +130,24 @@ static void start_web_radio()
         renderer_config->sample_rate_modifier = 0.0625;
 #endif
     }
+
+    return renderer_config;
+}
+
+static void start_web_radio()
+{
+    // init web radio
+    web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
+    radio_config->url = PLAY_URL;
+
+    // init player config
+    radio_config->player_config = calloc(1, sizeof(player_t));
+    radio_config->player_config->state = STOPPED;
+    radio_config->player_config->buffer_pref = SAFE;
+    radio_config->player_config->media_stream = calloc(1, sizeof(media_stream_t));
+
+    // init renderer
+    radio_config->player_config->renderer_config = create_renderer_config();
 
     // start radio
     web_radio_init(radio_config);
@@ -185,6 +193,7 @@ void app_main()
     ui_queue_event(UI_CONNECTED);
 
     start_web_radio();
+    // bt_speaker_start(create_renderer_config());
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
