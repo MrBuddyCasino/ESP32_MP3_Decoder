@@ -41,6 +41,15 @@ static unsigned short convert_16bit_stereo_to_8bit_stereo(short left, short righ
     return (left << 8) | (right & 0xff);
 }
 
+static unsigned int convert_16bit_stereo_to_dac_format(short left, short right)
+{
+    // The built-in DAC wants unsigned samples, so we shift the range
+    // from -32768 - 32767 to 0 - 65535.
+    left = left + 0x8000;
+    right = right + 0x8000;
+    return (left << 16) | (right & 0xffff);
+}
+
 static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
 {
     unsigned int sample = (unsigned short) left;
@@ -126,12 +135,19 @@ void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num
             break;
 
         case I2S_BITS_PER_SAMPLE_16BIT:
+            ; // C grammar workaround
+            int samp16 = 0;
             for (int i=0; i < num_samples; i++) {
 
                 if(state == RENDER_STOPPED)
                     break;
 
-                int samp16 = convert_16bit_stereo_to_16bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
+                if(curr_config->output_mode == DAC_BUILT_IN) {
+                    samp16 = convert_16bit_stereo_to_dac_format(sample_buff_ch0[i], sample_buff_ch1[i]);
+                } else {
+                    samp16 = convert_16bit_stereo_to_16bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
+                }
+
                 int bytes_pushed = i2s_push_sample(curr_config->i2s_num,  (char *)&samp16, delay);
 
                 // DMA buffer full - retry
