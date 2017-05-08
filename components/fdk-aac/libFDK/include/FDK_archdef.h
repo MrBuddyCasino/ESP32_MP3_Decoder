@@ -220,6 +220,9 @@ amm-info@iis.fraunhofer.de
 #define LDCOEFF_16BIT
 #define WINDOWTABLE_16BIT
 
+#elif defined(__xtensa__)
+/* got nothing yet */
+
 #else
 
   #warning  >>>> Please set architecture characterization defines for your platform (FDK_HIGH_PERFORMANCE)! <<<<

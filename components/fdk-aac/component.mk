@@ -1,5 +1,5 @@
 
-CPPFLAGS += -DFDK_HIGH_QUALITY -Wno-error=maybe-uninitialized -Wno-error=unused-label
+CPPFLAGS += -Wno-error=maybe-uninitialized -Wno-error=unused-label
 
 AACDEC_SRC = \
     libAACdec/src/aacdec_drc.cpp \
