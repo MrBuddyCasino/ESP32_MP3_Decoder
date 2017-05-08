@@ -165,7 +165,8 @@ static renderer_config_t *create_renderer_config()
     }
 
     if(renderer_config->output_mode == DAC_BUILT_IN) {
-        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
+        // renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
+        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
 #ifdef CONFIG_DAC_BUG_WORKAROUND
         // DAC is consuming samples too fast by default
         renderer_config->sample_rate_modifier = 0.0625;

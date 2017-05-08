@@ -83,7 +83,7 @@ static void init_i2s_dac(renderer_config_t *config)
     i2s_config_t i2s_config = {
             .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN, // Only TX
             .sample_rate = config->sample_rate,
-            .bits_per_sample = I2S_BITS_PER_SAMPLE_8BIT,    // Only 8-bit DAC support
+            .bits_per_sample = config->bit_depth,    // Only 8-bit DAC support
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
             .communication_format = I2S_COMM_FORMAT_I2S_MSB,
             .dma_buf_count = 14,                            // number of buffers, 128 max.
@@ -208,7 +208,6 @@ void audio_renderer_init(renderer_config_t *config)
 
         case DAC_BUILT_IN:
             ESP_LOGI(TAG, "init DAC_BUILTIN on port %d", config->i2s_num);
-            curr_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
             init_i2s_dac(config);
             break;
 
