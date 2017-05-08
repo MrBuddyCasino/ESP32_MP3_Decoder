@@ -109,6 +109,45 @@ static void set_wifi_credentials()
     esp_wifi_connect();
 }
 
+static void init_hardware()
+{
+    nvs_flash_init();
+
+    // init UI
+    ui_init(GPIO_NUM_32);
+
+    //Initialize the SPI RAM chip communications and see if it actually retains some bytes. If it
+    //doesn't, warn user.
+    if (!spiRamFifoInit()) {
+        printf("\n\nSPI RAM chip fail!\n");
+        while(1);
+    }
+
+    ESP_LOGI(TAG, "hardware initialized");
+}
+
+static void start_wifi()
+{
+    ESP_LOGI(TAG, "starting network");
+
+    /* FreeRTOS event group to signal when we are connected & ready to make a request */
+    EventGroupHandle_t wifi_event_group = xEventGroupCreate();
+
+    /* init wifi */
+    ui_queue_event(UI_CONNECTING);
+    initialise_wifi(wifi_event_group);
+    set_wifi_credentials();
+
+    /* start mDNS */
+    xTaskCreatePinnedToCore(&mdns_task, "mdns_task", 2048, wifi_event_group, 5, NULL, 0);
+
+    /* Wait for the callback to set the CONNECTED_BIT in the event group. */
+    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
+                        false, true, portMAX_DELAY);
+
+    ui_queue_event(UI_CONNECTED);
+}
+
 static renderer_config_t *create_renderer_config()
 {
     renderer_config_t *renderer_config = calloc(1, sizeof(renderer_config_t));
@@ -159,43 +198,16 @@ static void start_web_radio()
  */
 void app_main()
 {
-    printf("starting app_main()\n");
+    ESP_LOGI(TAG, "starting app_main()");
+    init_hardware();
 
-    /* FreeRTOS event group to signal when we are connected & ready to make a request */
-    EventGroupHandle_t wifi_event_group = xEventGroupCreate();
-
-    nvs_flash_init();
-
-    // init UI
-    ui_init(GPIO_NUM_32);
-    ui_queue_event(UI_CONNECTING);
-
-    initialise_wifi(wifi_event_group);
-
-    // quick hack
-    set_wifi_credentials();
-
-    //Initialize the SPI RAM chip communications and see if it actually retains some bytes. If it
-    //doesn't, warn user.
-    if (!spiRamFifoInit()) {
-        printf("\n\nSPI RAM chip fail!\n");
-        while(1);
-    }
-    printf("\n\nHardware initialized. Waiting for network.\n");
-
-    /* start mDNS */
-    xTaskCreatePinnedToCore(&mdns_task, "mdns_task", 2048, wifi_event_group, 5, NULL, 0);
-
-    /* Wait for the callback to set the CONNECTED_BIT in the event group. */
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
-                        false, true, portMAX_DELAY);
-
-    ui_queue_event(UI_CONNECTED);
-
+#ifdef CONFIG_BT_SPEAKER_MODE
+    bt_speaker_start(create_renderer_config());
+#else
+    start_wifi();
     start_web_radio();
-    // bt_speaker_start(create_renderer_config());
+#endif
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
-
     // ESP_LOGI(TAG, "app_main stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 }

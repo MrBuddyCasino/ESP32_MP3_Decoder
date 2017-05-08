@@ -37,8 +37,6 @@ rate! */
 // defined via 'make menuconfig'
 #define AUDIO_OUTPUT_MODE CONFIG_AUDIO_OUTPUT_MODE
 
-
-
 /*Playing a real-time MP3 stream has the added complication of clock differences: if the sample
 clock of the server is a bit faster than our sample clock, it will send out mp3 data faster
 than we process it and our buffer will fill up. Conversely, if the server clock is slower, we'll

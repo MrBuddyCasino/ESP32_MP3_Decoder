@@ -1,3 +1,5 @@
+menu "Web Radio / Bluetooth Speaker"
+
 menu "Wifi Configuration"
 
 config WIFI_SSID
@@ -16,8 +18,7 @@ config WIFI_PASSWORD
 
 endmenu
 
-
-menu "Audio"
+menu "Audio Output"
 
 choice
     prompt "Select Audio Output"
@@ -41,5 +42,15 @@ config AUDIO_OUTPUT_MODE
 
 config DAC_BUG_WORKAROUND
 	bool "Activate workaround when using Built-In DAC"
+
+endmenu
+
+menuconfig BT_SPEAKER_MODE
+    bool "Bluetooth Speaker Mode"
+    help
+       Select this option to turn on bluetooth speaker mode.
+       Web radio streaming will be unavailable.
+   select BT_ENABLED
+   select BT_CLASSIC_ENABLED
 
 endmenu
