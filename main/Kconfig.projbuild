@@ -21,7 +21,7 @@ endmenu
 menu "Audio Output"
 
 choice
-    prompt "Select Audio Output"
+    prompt "Select Audio Output Mode"
     default I2S
     help
         This option selects the audio output.

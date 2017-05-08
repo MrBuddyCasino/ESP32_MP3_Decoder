@@ -33,11 +33,13 @@ Add /path/to/xtensa-esp32-elf/bin to your PATH:
 ## Configuration
 
 The serial port and wifi credentials are configured using make.
-Type 'make menuconfig' and 
+Type `make menuconfig` and 
 
-* configure your serial port in "Serial flasher config" submenu
-* set wifi credentials in the "Wifi Configuration" submenu
-* in the "Audio" submenu, choose your output method
+* configure your serial port in `Serial flasher config` submenu
+* select `Web Radio / Bluetooth Speaker` submenu
+  * configure wifi credentials
+  * select audio output mode
+  * activate / disable bt speaker mode
 * 'save', then exit
 
 To change the radio station URL, modify PLAY_URL in /main/include/playerconfig.h.
@@ -56,11 +58,9 @@ You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> L
 
 ## Bluetooth Speaker Mode
 
-In `make menuconfig`, enable`Component config > Bluetooth > Classic Bluetooth`, save and exit. 
+Simply enable `Bluetooth Speaker Mode` via `make menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER".
 
-In `/main/app_main.c`, comment out `start_web_radio()` and uncomment `bt_speaker_start()`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER".
-
-Only 16 bit I2S output works right now.
+Note that only 16 bit I2S output works right now.
 
 ## Connecting the I2S codec
 
