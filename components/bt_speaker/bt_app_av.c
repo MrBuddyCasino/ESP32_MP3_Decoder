@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "../bt_speaker/bt_app_av.h"
+#include "bt_app_av.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,7 +25,7 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
-#include "../bt_speaker/bt_app_core.h"
+#include "bt_app_core.h"
 
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s.h"

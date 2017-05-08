@@ -21,7 +21,9 @@
 #include "playerconfig.h"
 #include "app_main.h"
 #include "mdns_task.h"
+#ifdef CONFIG_BT_SPEAKER_MODE
 #include "bt_speaker.h"
+#endif
 
 
 #define WIFI_LIST_NUM   10
@@ -139,7 +141,7 @@ static void start_wifi()
     set_wifi_credentials();
 
     /* start mDNS */
-    xTaskCreatePinnedToCore(&mdns_task, "mdns_task", 2048, wifi_event_group, 5, NULL, 0);
+    // xTaskCreatePinnedToCore(&mdns_task, "mdns_task", 2048, wifi_event_group, 5, NULL, 0);
 
     /* Wait for the callback to set the CONNECTED_BIT in the event group. */
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
