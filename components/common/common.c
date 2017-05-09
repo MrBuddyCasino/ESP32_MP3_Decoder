@@ -19,6 +19,52 @@
 
 #define TAG "common"
 
+/* available user data to take */
+size_t buf_fill(buffer_t *buf)
+{
+    if(buf == NULL) return -1;
+
+    return buf->fill_pos - buf->read_pos;
+}
+
+/* available unused capacity */
+size_t buf_free_capacity(buffer_t *buf)
+{
+    if(buf == NULL) return -1;
+
+    return (buf->base + buf->len) - buf->fill_pos;
+}
+
+buffer_t *buf_create(size_t len)
+{
+    buffer_t* buf = calloc(1, sizeof(buffer_t));
+
+    buf->len = len;
+    buf->base = calloc(len, sizeof(uint8_t));
+    if(buf->base == NULL) {
+        ESP_LOGE(TAG, "couldn't allocate buffer of size %d", len);
+        return NULL;
+    }
+    buf->read_pos = buf->base;
+    buf->fill_pos = buf->base;
+
+    return buf;
+}
+
+/* free the buffer array */
+int buf_destroy(buffer_t *buf)
+{
+    if(buf == NULL)
+        return -1;
+
+    if(buf->base != NULL)
+        free(buf->base);
+
+    free(buf);
+
+    return 0;
+}
+
 size_t fill_read_buffer(buffer_t *buf)
 {
     size_t bytes_read = 0;

@@ -16,12 +16,24 @@ typedef struct
     uint16_t len;
 } buffer_t;
 
+/* create a buffer on the heap */
+buffer_t *buf_create(size_t len);
+
+/* free the backing storage, and the struct itself */
+int buf_destroy(buffer_t *buf);
+
 /**
  * Seek from the current position of the pointer.
  */
 int buf_seek_rel(buffer_t *buf, uint32_t pos);
 
 int buf_seek_abs(buffer_t *buf, uint32_t pos);
+
+/* available user data to take */
+size_t buf_fill(buffer_t *buf);
+
+/* available unused capacity */
+size_t buf_free_capacity(buffer_t *buf);
 
 /**
  * Reads an array of count elements, each one with a size of size bytes,

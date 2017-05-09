@@ -316,7 +316,7 @@ static bool read_chunk_stsd(qtmovie_t *qtmovie, size_t chunk_len)
 }
 
 static bool read_chunk_stts(qtmovie_t *qtmovie, size_t chunk_len)
-{
+{   if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
     unsigned int i;
     uint32_t numentries;
     size_t size_remaining = chunk_len - 8;
@@ -393,7 +393,7 @@ static bool read_chunk_stsz(qtmovie_t *qtmovie, size_t chunk_len)
 }
 
 static bool read_chunk_stsc(qtmovie_t *qtmovie, size_t chunk_len)
-{
+{   if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
     unsigned int i;
     uint32_t numentries;
     size_t size_remaining = chunk_len - 8;
@@ -435,6 +435,7 @@ static bool read_chunk_stsc(qtmovie_t *qtmovie, size_t chunk_len)
 
 static bool read_chunk_stco(qtmovie_t *qtmovie, size_t chunk_len)
 {
+    if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
     uint32_t i, k, old_i;
     uint32_t numentries;
     uint32_t idx = 0;

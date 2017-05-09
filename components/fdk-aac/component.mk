@@ -1,5 +1,5 @@
 
-CPPFLAGS += -Wno-error=maybe-uninitialized -Wno-error=unused-label
+CPPFLAGS += -Wno-error=maybe-uninitialized -Wno-maybe-uninitialized -Wno-error=unused-label -Wno-unused-function -Wno-unused-but-set-variable 
 
 AACDEC_SRC = \
     libAACdec/src/aacdec_drc.cpp \
