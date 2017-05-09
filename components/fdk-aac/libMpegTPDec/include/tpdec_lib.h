@@ -2,7 +2,7 @@
 /* -----------------------------------------------------------------------------------------------------------
 Software License for The Fraunhofer FDK AAC Codec Library for Android
 
-© Copyright  1995 - 2013 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+ï¿½ Copyright  1995 - 2013 Fraunhofer-Gesellschaft zur Fï¿½rderung der angewandten Forschung e.V.
   All rights reserved.
 
  1.    INTRODUCTION
@@ -94,8 +94,8 @@ amm-info@iis.fraunhofer.de
 #include "tp_data.h"
 
 #include "FDK_bitstream.h"
-
-#define TRANSPORTDEC_INBUF_SIZE  ( 8192 )   /*!< Size is in bytes.
+/* changed from the default of 8192 to save memory */
+#define TRANSPORTDEC_INBUF_SIZE  ( 2048 )   /*!< Size is in bytes.
                                                  Set the transport input buffer size carefully and
                                                  assure that it fulfills the requirements of the
                                                  supported transport format(s).                    */
@@ -357,7 +357,7 @@ int transportDec_RegisterSscCallback (
  * \param hTp            Handle of transport decoder.
  * \param cbUpdateConfig Pointer to a callback function to handle SBR header parsing.
  * \param user_data      void pointer for user data passed to the callback as first parameter.
- * \return               0 on success. 
+ * \return               0 on success.
  */
 int transportDec_RegisterSbrCallback( HANDLE_TRANSPORTDEC hTpDec, const cbSbr_t cbSbr, void* user_data);
 
@@ -451,14 +451,14 @@ INT transportDec_GetAuBitsTotal( const HANDLE_TRANSPORTDEC hTp, const UINT layer
 TRANSPORTDEC_ERROR transportDec_EndAccessUnit ( const HANDLE_TRANSPORTDEC hTp );
 
 /**
- * \brief      Obtain the amount of missing access units if applicable in case of 
+ * \brief      Obtain the amount of missing access units if applicable in case of
  *             a bit stream synchronization error. Each time transportDec_ReadAccessUnit()
  *             returns TRANSPORTDEC_SYNC_ERROR this function can be called to retrieve an estimate
  *             of the amount of missing access units. This works only in case of constant average
  *             bit rate (has to be known) and if the parameter TPDEC_PARAM_SET_BITRATE has been set
  *             accordingly.
  * \param hTp  Transport Handle.
- * \param pNAccessUnits pointer to a memory location where the estimated lost frame count will be stored into.      
+ * \param pNAccessUnits pointer to a memory location where the estimated lost frame count will be stored into.
  * \return     Error code.
  */
 TRANSPORTDEC_ERROR transportDec_GetMissingAccessUnitCount ( INT *pNAccessUnits, HANDLE_TRANSPORTDEC hTp );
