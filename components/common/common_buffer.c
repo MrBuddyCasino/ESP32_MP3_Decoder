@@ -1,9 +1,11 @@
 /*
- * common.c
+ * common_buffer.c
  *
  *  Created on: 28.04.2017
  *      Author: michaelboeckling
  */
+
+#include "common_buffer.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -15,26 +17,10 @@
 #include "esp_log.h"
 #include "spiram_fifo.h"
 #include "byteswap.h"
-#include "common.h"
 
 #define TAG "common"
 
-/* available user data to take */
-size_t buf_fill(buffer_t *buf)
-{
-    if(buf == NULL) return -1;
-
-    return buf->fill_pos - buf->read_pos;
-}
-
-/* available unused capacity */
-size_t buf_free_capacity(buffer_t *buf)
-{
-    if(buf == NULL) return -1;
-
-    return (buf->base + buf->len) - buf->fill_pos;
-}
-
+/* creates a buffer struct and its storage on the heap */
 buffer_t *buf_create(size_t len)
 {
     buffer_t* buf = calloc(1, sizeof(buffer_t));
@@ -51,7 +37,7 @@ buffer_t *buf_create(size_t len)
     return buf;
 }
 
-/* free the buffer array */
+/* free the buffer struct and its storage */
 int buf_destroy(buffer_t *buf)
 {
     if(buf == NULL)
@@ -65,53 +51,60 @@ int buf_destroy(buffer_t *buf)
     return 0;
 }
 
-size_t fill_read_buffer(buffer_t *buf)
+/* available unused capacity */
+size_t buf_free_capacity(buffer_t *buf)
 {
-    size_t bytes_read = 0;
-    size_t unread_data = buf->fill_pos - buf->read_pos;
+    if(buf == NULL) return -1;
+
+    size_t unused_capacity = (buf->base + buf->len) - buf->fill_pos;
+    return buf_data_consumed(buf) + unused_capacity;
+}
+
+/* amount of bytes unread */
+size_t buf_data_total(buffer_t *buf)
+{
+    if(buf == NULL) return -1;
+
+    return buf->fill_pos - buf->base;
+}
+
+/* amount of bytes unread */
+size_t buf_data_unread(buffer_t *buf)
+{
+    if(buf == NULL) return -1;
+
+    return buf->fill_pos - buf->read_pos;
+}
+
+/* amount of bytes already consumed */
+size_t buf_data_consumed(buffer_t *buf)
+{
+    if(buf == NULL) return -1;
+
+    return buf->read_pos - buf->base;
+}
+
+void buf_move_remaining_bytes_to_front(buffer_t *buf)
+{
+    size_t unread_data = buf_data_unread(buf);
 
     // move remaining data to front
     memmove(buf->base, buf->read_pos, unread_data);
     buf->read_pos = buf->base;
     buf->fill_pos = buf->base + unread_data;
+}
 
-    size_t space_left = (buf->base + buf->len) - buf->fill_pos;
+size_t fill_read_buffer(buffer_t *buf)
+{
+    buf_move_remaining_bytes_to_front(buf);
+    size_t bytes_to_read = min(buf_free_capacity(buf), spiRamFifoFill());
 
-    // ESP_LOGI(TAG, "unread_data %d space_left %d", unread_data, space_left);
-
-    if (space_left > 0) {
-
-        while (1) {
-            size_t bytes_to_read = space_left;
-
-            int fifo_fill = spiRamFifoFill();
-            if (fifo_fill < space_left) bytes_to_read = fifo_fill;
-
-            if (bytes_to_read == 0) {
-                printf("Buffer underflow, need %d bytes.\n", space_left);
-                taskYIELD();
-            } else {
-                spiRamFifoRead((char *) buf->fill_pos, bytes_to_read);
-                buf->fill_pos += bytes_to_read;
-                bytes_read += bytes_to_read;
-
-                /*
-                if (bytes_to_read < space_left) { //Rest mit 0 füllen (EOF)
-                    memset(buf->start + data_left, 0, buf->len - data_left);
-                }
-                */
-
-                // fill the whole buffer
-                if (buf->fill_pos >= buf->base + buf->len) {
-                    break;
-                }
-            }
-        }
-
+    if (bytes_to_read > 0) {
+        spiRamFifoRead((char *) buf->fill_pos, bytes_to_read);
+        buf->fill_pos += bytes_to_read;
     }
 
-    // ESP_LOGI(TAG, "read %d bytes", bytes_read);
-    return bytes_read;
+    return bytes_to_read;
 }
 
 

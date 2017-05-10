@@ -143,8 +143,8 @@ void web_radio_gpio_handler_task(void *pvParams)
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
 
-            switch (config->player_config->state) {
-                case STARTED:
+            switch (config->player_config->status) {
+                case RUNNING:
                     printf("stopping player\n");
                     web_radio_stop(config);
                     break;
@@ -155,7 +155,7 @@ void web_radio_gpio_handler_task(void *pvParams)
                     break;
 
                 default:
-                    printf("player state: %d\n", config->player_config->state);
+                    printf("player state: %d\n", config->player_config->status);
             }
         }
     }

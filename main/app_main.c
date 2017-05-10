@@ -107,7 +107,7 @@ static void set_wifi_credentials()
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
     esp_wifi_disconnect();
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    ESP_LOGI(TAG, "connecting\n");
+    ESP_LOGI(TAG, "connecting");
     esp_wifi_connect();
 }
 
@@ -165,12 +165,7 @@ static renderer_config_t *create_renderer_config()
     }
 
     if(renderer_config->output_mode == DAC_BUILT_IN) {
-        // renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
         renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
-#ifdef CONFIG_DAC_BUG_WORKAROUND
-        // DAC is consuming samples too fast by default
-        // renderer_config->sample_rate_modifier = 0.0625;
-#endif
     }
 
     return renderer_config;
@@ -184,7 +179,10 @@ static void start_web_radio()
 
     // init player config
     radio_config->player_config = calloc(1, sizeof(player_t));
-    radio_config->player_config->state = STOPPED;
+    radio_config->player_config->status = UNINITIALIZED;
+    radio_config->player_config->command = CMD_NONE;
+    radio_config->player_config->decoder_status = UNINITIALIZED;
+    radio_config->player_config->decoder_command = CMD_NONE;
     radio_config->player_config->buffer_pref = SAFE;
     radio_config->player_config->media_stream = calloc(1, sizeof(media_stream_t));
 

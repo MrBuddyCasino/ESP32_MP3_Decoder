@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "driver/i2s.h"
 
-#include "../common/include/common.h"
+#include "common_buffer.h"
 #include "aacdecoder_lib.h"
 #include "audio_player.h"
 #include "m4a.h"
@@ -43,17 +43,12 @@ void fdkaac_decoder_task(void *pvParameters)
 
     /* allocate bitstream buffer */
     buffer_t *in_buf = buf_create(INPUT_BUFFER_SIZE);
-
     fill_read_buffer(in_buf);
-
-    /* select bitstream format */
-    TRANSPORT_TYPE format = TT_MP4_ADTS;
 
     HANDLE_AACDECODER handle = NULL;
 
+    /* select bitstream format */
     if (player->media_stream->content_type == AUDIO_MP4) {
-        format = TT_MP4_RAW;
-
         demux_res_t demux_res;
         stream_t input_stream;
 
@@ -70,7 +65,7 @@ void fdkaac_decoder_task(void *pvParameters)
         }
 
         /* create decoder instance */
-        handle = aacDecoder_Open(format, /* num layers */1);
+        handle = aacDecoder_Open(TT_MP4_RAW, /* num layers */1);
         if (handle == NULL) {
             ESP_LOGE(TAG, "malloc failed %d", __LINE__);
             goto cleanup;
@@ -86,7 +81,7 @@ void fdkaac_decoder_task(void *pvParameters)
 
     } else {
         /* create decoder instance */
-        handle = aacDecoder_Open(format, /* num layers */1);
+        handle = aacDecoder_Open(TT_MP4_ADTS, /* num layers */1);
         if (handle == NULL) {
             ESP_LOGE(TAG, "malloc failed %d", __LINE__);
             goto cleanup;
@@ -108,15 +103,15 @@ void fdkaac_decoder_task(void *pvParameters)
     while (!player->media_stream->eof) {
 
         /* re-fill buffer if necessary */
-        if (buf_fill(in_buf) == 0) {
+        if (buf_data_unread(in_buf) == 0) {
             fill_read_buffer(in_buf);
         }
 
         // bytes_avail will be updated and indicate "how much data is left"
-        size_t bytes_avail = buf_fill(in_buf);
+        size_t bytes_avail = buf_data_unread(in_buf);
         aacDecoder_Fill(handle, &in_buf->read_pos, &bytes_avail, &bytes_avail);
 
-        uint32_t bytes_taken = buf_fill(in_buf) - bytes_avail;
+        uint32_t bytes_taken = buf_data_unread(in_buf) - bytes_avail;
         buf_seek_rel(in_buf, bytes_taken);
 
 

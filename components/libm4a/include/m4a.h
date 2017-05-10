@@ -23,7 +23,7 @@
 #define _M4A_H
 
 // #include <codecs.h>
-#include "common.h"
+#include "common_buffer.h"
 #include <inttypes.h>
 
 /* AAC codecdata appears to always be less than 8 bytes - see

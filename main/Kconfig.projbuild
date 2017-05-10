@@ -40,9 +40,6 @@ config AUDIO_OUTPUT_MODE
     default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
     default 2 if AUDIO_OUTPUT_MODE_DAC_BUILT_IN
 
-config DAC_BUG_WORKAROUND
-	bool "Activate workaround when using Built-In DAC"
-
 endmenu
 
 menuconfig BT_SPEAKER_MODE

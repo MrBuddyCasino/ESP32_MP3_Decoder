@@ -23,6 +23,7 @@
 #include "audio_player.h"
 #include "spiram_fifo.h"
 #include "mp3_decoder.h"
+#include "common_buffer.h"
 
 #define TAG "decoder"
 
@@ -33,61 +34,53 @@
 // The theoretical minimum frame size of 24 plus 8 byte MAD_BUFFER_GUARD.
 #define MIN_FRAME_SIZE (32)
 
-// read buffer
-static char read_buf[MAX_FRAME_SIZE];
-
 static long buf_underrun_cnt;
 
+static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *player)
+{
+    int bytes_to_read;
 
-static enum mad_flow input(struct mad_stream *stream, player_t *player) {
-    int bytes_to_read, fifo_fill;
-    int bytes_left;
-    //Shift remaining contents of buf to the front
-    bytes_left = stream->bufend - stream->next_frame;
-    memmove(read_buf, stream->next_frame, bytes_left);
+    // next_frame is the position MAD is interested in resuming from
+    uint32_t bytes_consumed  = stream->next_frame - stream->buffer;
+    buf_seek_rel(buf, bytes_consumed);
 
-    //while (rem < sizeof(read_buf)) {
     while (1) {
 
         // stop requested, terminate immediately
-        if(player->state == STOPPED)
+        if(player->decoder_command == CMD_STOP) {
             return MAD_FLOW_STOP;
+        }
 
-        bytes_to_read = (sizeof(read_buf) - bytes_left);    // Calculate amount of bytes we need to fill buffer.
-        fifo_fill = spiRamFifoFill();
-        if (fifo_fill < bytes_to_read)
-            bytes_to_read = fifo_fill;                 // If the fifo can give us less, only take that amount
+        // Calculate amount of bytes we need to fill buffer.
+        bytes_to_read = min(buf_free_capacity(buf), spiRamFifoFill());
 
         // Can't take anything?
         if (bytes_to_read == 0) {
 
             // EOF reached, stop decoder when all frames have been consumed
-            if(player->state == FINISHED) {
-                // clear the buffer
-                i2s_zero_dma_buffer(player->renderer_config->i2s_num);
+            if(player->media_stream->eof) {
                 return MAD_FLOW_STOP;
             }
 
             //Wait until there is enough data in the buffer. This only happens when the data feed
             //rate is too low, and shouldn't normally be needed!
-            printf("Buffer underflow, need %d bytes.\n", sizeof(read_buf) - bytes_left);
+            ESP_LOGE(TAG, "Buffer underflow, need %d bytes.", buf_free_capacity(buf));
             buf_underrun_cnt++;
             //We both silence the output as well as wait a while by pushing silent samples into the i2s system.
             //This waits for about 200mS
             i2s_zero_dma_buffer(player->renderer_config->i2s_num);
         } else {
             //Read some bytes from the FIFO to re-fill the buffer.
-            spiRamFifoRead(&read_buf[bytes_left], bytes_to_read);
-            bytes_left += bytes_to_read;
+            fill_read_buffer(buf);
 
-            // break the loop if we have at least enough to decode the smallest possible frame
-            if(bytes_left >= MIN_FRAME_SIZE)
+            // break the loop if we have at least enough to decode a few of the smallest possible frame
+            if(buf_data_unread(buf) >= (MIN_FRAME_SIZE * 4))
                 break;
         }
     }
 
     // Okay, let MAD decode the buffer.
-    mad_stream_buffer(stream, (unsigned char*) read_buf, sizeof(read_buf));
+    mad_stream_buffer(stream, (unsigned char*) buf->read_pos, buf_data_unread(buf));
     return MAD_FLOW_CONTINUE;
 }
 
@@ -115,10 +108,12 @@ void mp3_decoder_task(void *pvParameters)
     stream = malloc(sizeof(struct mad_stream));
     frame = malloc(sizeof(struct mad_frame));
     synth = malloc(sizeof(struct mad_synth));
+    buffer_t *buf = buf_create(MAX_FRAME_SIZE);
 
     if (stream==NULL) { printf("MAD: malloc(stream) failed\n"); return; }
     if (synth==NULL) { printf("MAD: malloc(synth) failed\n"); return; }
     if (frame==NULL) { printf("MAD: malloc(frame) failed\n"); return; }
+    if (buf==NULL) { printf("MAD: buf_create() failed\n"); return; }
 
     buf_underrun_cnt = 0;
 
@@ -129,15 +124,20 @@ void mp3_decoder_task(void *pvParameters)
     mad_frame_init(frame);
     mad_synth_init(synth);
 
-    while(player->state != STOPPED && !player->media_stream->eof) {
+    while(1) {
 
         // calls mad_stream_buffer internally
-        if (input(stream, player) == MAD_FLOW_STOP ) {
+        if (input(stream, buf, player) == MAD_FLOW_STOP ) {
             break;
         }
 
         // decode frames until MAD complains
-        while(player->state != STOPPED) {
+        while(1) {
+
+            if(player->decoder_command == CMD_STOP) {
+                goto abort;
+            }
+
             // returns 0 or -1
             ret = mad_frame_decode(frame, stream);
             if (ret == -1) {
@@ -150,18 +150,26 @@ void mp3_decoder_task(void *pvParameters)
             }
             mad_synth_frame(synth, frame);
         }
-        // ESP_LOGI(TAG, "MAD decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
         // ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
     }
+
+    abort:
+    // avoid noise
+    i2s_zero_dma_buffer(player->renderer_config->i2s_num);
 
     free(synth);
     free(frame);
     free(stream);
+    buf_destroy(buf);
 
     // clear semaphore for reader task
     spiRamFifoReset();
 
+    player->decoder_status = STOPPED;
+    player->decoder_command = CMD_NONE;
     printf("MAD: Decoder stopped.\n");
+
+    ESP_LOGI(TAG, "MAD decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
 }
 

@@ -5,8 +5,18 @@
  *      Author: michaelboeckling
  */
 
-#ifndef _INCLUDE_COMMON_H_
-#define _INCLUDE_COMMON_H_
+#ifndef _INCLUDE_COMMON_BUFFER_H_
+#define _INCLUDE_COMMON_BUFFER_H_
+
+#include <inttypes.h>
+#include <stddef.h>
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
 
 typedef struct
 {
@@ -29,11 +39,17 @@ int buf_seek_rel(buffer_t *buf, uint32_t pos);
 
 int buf_seek_abs(buffer_t *buf, uint32_t pos);
 
-/* available user data to take */
-size_t buf_fill(buffer_t *buf);
-
 /* available unused capacity */
 size_t buf_free_capacity(buffer_t *buf);
+
+/* total amount of data in the buffer */
+size_t buf_data_total(buffer_t *buf);
+
+/* bytes left to be consumed */
+size_t buf_data_unread(buffer_t *buf);
+
+/* stale bytes that have already been consumed */
+size_t buf_data_consumed(buffer_t *buf);
 
 /**
  * Reads an array of count elements, each one with a size of size bytes,
@@ -57,4 +73,4 @@ unsigned int REV32( unsigned int value);
 
 size_t fill_read_buffer(buffer_t *buf);
 
-#endif /* _INCLUDE_COMMON_H_ */
+#endif /* _INCLUDE_COMMON_BUFFER_H_ */

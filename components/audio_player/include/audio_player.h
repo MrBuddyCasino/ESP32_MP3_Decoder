@@ -15,8 +15,12 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read, void *user_d
 
 
 typedef enum {
-    IDLE, STARTED, BUFFER_UNDERRUN, FINISHED, STOPPED
+    UNINITIALIZED, INITIALIZED, RUNNING, STOPPED
 } player_state_t;
+
+typedef enum {
+    CMD_NONE, CMD_START, CMD_STOP
+} player_command_t;
 
 typedef enum {
     FAST, SAFE
@@ -33,7 +37,12 @@ typedef struct {
 } media_stream_t;
 
 typedef struct {
-    volatile player_state_t state;
+    player_command_t command;
+    player_state_t status;
+
+    player_command_t decoder_command;
+    player_state_t decoder_status;
+
     renderer_config_t *renderer_config;
     buffer_pref_t buffer_pref;
     media_stream_t *media_stream;
