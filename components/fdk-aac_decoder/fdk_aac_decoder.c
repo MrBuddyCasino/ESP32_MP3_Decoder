@@ -146,9 +146,7 @@ void fdkaac_decoder_task(void *pvParameters)
             pcm_format.sample_rate = mStreamInfo->sampleRate;
         }
 
-
         render_samples((const char *) pcm_buf->base, pcm_size, &pcm_format);
-        // i2s_write_bytes(player->renderer_config->i2s_num, (const char *) pcm_buf->base, pcm_size, 1000 / portTICK_PERIOD_MS);
 
         // ESP_LOGI(TAG, "fdk_aac_decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
         // ESP_LOGI(TAG, "%u free heap %u", __LINE__, esp_get_free_heap_size());
