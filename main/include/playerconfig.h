@@ -12,11 +12,15 @@
 #define PLAY_URL "http://ice1.somafm.com/illstreet-128-mp3"
 #endif
 
-/* as AAC stream */
+/* same as AAC LC stream */
 #if 0
 #define PLAY_URL "http://ice1.somafm.com/illstreet-128-aac"
 #endif
 
+/* AAC+ stream, too slow currently */
+#if 0
+#define PLAY_URL "http://81.201.157.218:80/a1stg/livestream1.aac"
+#endif
 
 #if 0
 #define PLAY_URL "http://mp3ad.egofm.c.nmdn.net/ps-egofmraw_192/livestream.mp3"

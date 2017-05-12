@@ -28,8 +28,18 @@ static QueueHandle_t i2s_event_queue;
 
 static void init_i2s(renderer_config_t *config)
 {
+    i2s_mode_t mode = I2S_MODE_MASTER | I2S_MODE_TX;
+
+    if(config->output_mode == DAC_BUILT_IN) {
+        mode = mode | I2S_MODE_DAC_BUILT_IN;
+    }
+
+    if(config->output_mode == PDM) {
+        mode = mode | I2S_MODE_PDM;
+    }
+
     i2s_config_t i2s_config = {
-            .mode = I2S_MODE_MASTER | I2S_MODE_TX,          // Only TX
+            .mode = mode,          // Only TX
             .sample_rate = config->sample_rate,
             .bits_per_sample = config->bit_depth,
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
@@ -47,31 +57,15 @@ static void init_i2s(renderer_config_t *config)
     };
 
     i2s_driver_install(config->i2s_num, &i2s_config, 1, &i2s_event_queue);
-    i2s_set_pin(config->i2s_num, &pin_config);
+
+    if((mode & I2S_MODE_DAC_BUILT_IN) || (mode & I2S_MODE_PDM)) {
+        i2s_set_pin(config->i2s_num, NULL);
+        i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+    } else {
+        i2s_set_pin(config->i2s_num, &pin_config);
+    }
+
     i2s_stop(config->i2s_num);
-}
-
-
-/*
- * Output audio without I2S codec via built-in 8-Bit DAC.
- */
-static void init_i2s_dac(renderer_config_t *config)
-{
-
-    i2s_config_t i2s_config = {
-            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-            .sample_rate = config->sample_rate,
-            .bits_per_sample = config->bit_depth,           // DAC expects 16 bit
-            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
-            .communication_format = I2S_COMM_FORMAT_I2S_MSB,
-            .dma_buf_count = 14,                            // number of buffers, 128 max.
-            .dma_buf_len = 32 * 2,                          // size of each buffer
-            .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1        // Interrupt level 1
-    };
-
-    i2s_driver_install(config->i2s_num, &i2s_config, 0, NULL);
-    i2s_set_pin(config->i2s_num, NULL);
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
 }
 
 
@@ -210,23 +204,10 @@ void renderer_init(renderer_config_t *config)
     renderer_status = INITIALIZED;
 
     ESP_LOGI(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", config->output_mode, config->i2s_num, config->bit_depth, config->sample_rate);
-    switch (config->output_mode) {
-        case I2S:
-            init_i2s(config);
-	        break;
+    init_i2s(config);
 
-        case I2S_MERUS:
-            init_i2s(config);
-            init_ma120(0x50); // setup ma120x0p and initial volume
-            break;
-
-        case DAC_BUILT_IN:
-            init_i2s_dac(config);
-            break;
-
-        case PDM:
-            // TODO
-            break;
+    if(config->output_mode == I2S_MERUS) {
+        init_ma120(0x50); // setup ma120x0p and initial volume
     }
 }
 

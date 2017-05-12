@@ -89,7 +89,7 @@ Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu.
 
 You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
 
-The ESP32 also supports PDM mode which should give better sound than the 8 bit DAC, but the SDK doesn't support it yet.
+PDM mode is also supported, it should give better sound than the 8 bit DAC.
 
 ## Known Issues
 

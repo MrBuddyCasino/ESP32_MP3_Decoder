@@ -32,6 +32,8 @@ choice
         bool "Merus Audio I2S"
     config AUDIO_OUTPUT_MODE_DAC_BUILT_IN
         bool "Built-In DAC"
+    config AUDIO_OUTPUT_MODE_PDM
+        bool "PDM"
 endchoice
 
 config AUDIO_OUTPUT_MODE
@@ -39,6 +41,7 @@ config AUDIO_OUTPUT_MODE
     default 0 if AUDIO_OUTPUT_MODE_I2S
     default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
     default 2 if AUDIO_OUTPUT_MODE_DAC_BUILT_IN
+    default 3 if AUDIO_OUTPUT_MODE_PDM
 
 endmenu
 
