@@ -60,8 +60,6 @@ You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> L
 
 Enable `Classic Bluetooth` in `Component config > Bluetooth > Bluedroid Bluetooth stack enabled > Classic Bluetooth`, then enable `Bluetooth Speaker Mode` via `make menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER".
 
-Note that only 16 bit I2S output works right now.
-
 ## Connecting the I2S codec
 
 If you don't know about the I2S standard, it is a special protocol for transferring digital audio data between chips, similar to I2C. There are many I2S chips you can choose from, the most important differences are:
@@ -87,7 +85,7 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 ## Running without the I2S DAC
 
 The ESP32 has a built-in 8-Bit DAC that we can use.
-Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu. Make sure to enable `DAC_BUG_WORKAROUND`, too.
+Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu.
 
 You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
 
@@ -95,7 +93,6 @@ The ESP32 also supports PDM mode which should give better sound than the 8 bit D
 
 ## Known Issues
 
-* AAC not yet working with builtin DAC
 * AAC MP4 parser has a memory bug
 * Not all AAC streams playable
 
@@ -103,6 +100,11 @@ The ESP32 also supports PDM mode which should give better sound than the 8 bit D
 
 There is a thread over at the ESP32 forum:
 https://esp32.com/viewtopic.php?f=17&t=1026
+
+## Related Hardware
+
+If you're looking for a purpose-built board, check out the "ESP32 Audio Developing Board" from Microwavemont:
+https://www.tindie.com/products/microwavemont/esp32-audio-developing-board-esp32-adb/
 
 ## Breadboard Example
 
