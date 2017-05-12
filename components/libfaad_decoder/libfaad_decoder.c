@@ -23,7 +23,7 @@
 //typedef real_t complex_t[2];
 //#include "../libfaad/structs.h"
 
-#include "common.h"
+#include "common_buffer.h"
 #include "m4a.h"
 #include "audio_renderer.h"
 #include "audio_player.h"
@@ -161,7 +161,8 @@ void libfaac_decoder_task(void *pvParameters)
     }
 
     NeAACDecConfigurationPtr conf = NeAACDecGetCurrentConfiguration(decoder);
-    switch(player->renderer_config->bit_depth) {
+    renderer_config_t *renderer = renderer_get();
+    switch(renderer->bit_depth) {
         case I2S_BITS_PER_SAMPLE_8BIT:
         case I2S_BITS_PER_SAMPLE_16BIT:
             conf->outputFormat = FAAD_FMT_16BIT;
@@ -204,7 +205,7 @@ void libfaac_decoder_task(void *pvParameters)
     // asm("break.n 1");
 
     ESP_LOGI(TAG, "sample rate: %lu channels: %u", samp_rate, chan);
-    i2s_set_clk(player->renderer_config->i2s_num, samp_rate, player->renderer_config->bit_depth, chan);
+    i2s_set_clk(renderer->i2s_num, samp_rate, renderer->bit_depth, chan);
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
@@ -232,7 +233,7 @@ void libfaac_decoder_task(void *pvParameters)
         framelength = frame_samples - lead_trim;
 
         int16_t *pcm_buf = ret;
-        i2s_write_bytes(player->renderer_config->i2s_num, pcm_buf, frame_info.samples * 2, 1000 / portTICK_PERIOD_MS);
+        i2s_write_bytes(renderer->i2s_num, pcm_buf, frame_info.samples * 2, 1000 / portTICK_PERIOD_MS);
 
         // render
         // max delay: 50ms instead of portMAX_DELAY

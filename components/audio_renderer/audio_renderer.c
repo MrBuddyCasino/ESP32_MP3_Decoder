@@ -19,47 +19,15 @@
 #include "audio_player.h"
 #include "audio_renderer.h"
 
-
 #define TAG "renderer"
 
-typedef enum {
-     RENDER_ACTIVE, RENDER_STOPPED
-} renderer_state_t;
 
-
-/* TODO: refactor */
-static renderer_config_t *curr_config;
-static renderer_state_t state;
-
-
-static unsigned short convert_16bit_stereo_to_8bit_stereo(short left, short right)
-{
-    // The right shift by 8 reduces the sample range to -0x80 to +0x7f.
-    // Adding 0x80 shifts this range to be between 0x00 and 0xff, which is what the built-in DAC expects.
-    left = (left >> 8) + 0x80;
-    right = (right >> 8) + 0x80;
-    return (left << 8) | (right & 0xff);
-}
-
-static unsigned int convert_16bit_stereo_to_dac_format(short left, short right)
-{
-    // The built-in DAC wants unsigned samples, so we shift the range
-    // from -32768 - 32767 to 0 - 65535.
-    left = left + 0x8000;
-    right = right + 0x8000;
-    return (left << 16) | (right & 0xffff);
-}
-
-static int convert_16bit_stereo_to_16bit_stereo(short left, short right)
-{
-    unsigned int sample = (unsigned short) left;
-    sample = (sample << 16 & 0xffff0000) | ((unsigned short) right);
-    return sample;
-}
+static renderer_config_t *renderer_instance = NULL;
+static component_status_t renderer_status = UNINITIALIZED;
+static QueueHandle_t i2s_event_queue;
 
 static void init_i2s(renderer_config_t *config)
 {
-
     i2s_config_t i2s_config = {
             .mode = I2S_MODE_MASTER | I2S_MODE_TX,          // Only TX
             .sample_rate = config->sample_rate,
@@ -78,8 +46,9 @@ static void init_i2s(renderer_config_t *config)
             .data_in_num = I2S_PIN_NO_CHANGE    // Not used
     };
 
-    i2s_driver_install(config->i2s_num, &i2s_config, 0, NULL);
+    i2s_driver_install(config->i2s_num, &i2s_config, 1, &i2s_event_queue);
     i2s_set_pin(config->i2s_num, &pin_config);
+    i2s_stop(config->i2s_num);
 }
 
 
@@ -90,9 +59,9 @@ static void init_i2s_dac(renderer_config_t *config)
 {
 
     i2s_config_t i2s_config = {
-            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN, // Only TX
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
             .sample_rate = config->sample_rate,
-            .bits_per_sample = config->bit_depth,    // Only 8-bit DAC support
+            .bits_per_sample = config->bit_depth,           // DAC expects 16 bit
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
             .communication_format = I2S_COMM_FORMAT_I2S_MSB,
             .dma_buf_count = 14,                            // number of buffers, 128 max.
@@ -102,113 +71,143 @@ static void init_i2s_dac(renderer_config_t *config)
 
     i2s_driver_install(config->i2s_num, &i2s_config, 0, NULL);
     i2s_set_pin(config->i2s_num, NULL);
-}
-
-/* render callback for the libmad synth */
-void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
-{
-
-    // if mono: simply duplicate the left channel
-    if(num_channels == 1) {
-        sample_buff_ch1 = sample_buff_ch0;
-    }
-
-    // max delay: 50ms instead of portMAX_DELAY
-    TickType_t delay = 50 / portTICK_PERIOD_MS;
-
-    switch(curr_config->bit_depth) {
-
-        case I2S_BITS_PER_SAMPLE_8BIT:
-            for (int i=0; i < num_samples; i++) {
-
-                if(state == RENDER_STOPPED)
-                    break;
-
-                short samp8 = convert_16bit_stereo_to_8bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
-                int bytes_pushed = i2s_push_sample(curr_config->i2s_num,  (char *)&samp8, delay);
-
-                // DMA buffer full - retry
-                if(bytes_pushed == 0) {
-                    i--;
-                }
-            }
-            break;
-
-        case I2S_BITS_PER_SAMPLE_16BIT:
-            ; // C grammar workaround
-            int samp16 = 0;
-            for (int i=0; i < num_samples; i++) {
-
-                if(state == RENDER_STOPPED)
-                    break;
-
-                if(curr_config->output_mode == DAC_BUILT_IN) {
-                    samp16 = convert_16bit_stereo_to_dac_format(sample_buff_ch0[i], sample_buff_ch1[i]);
-                } else {
-                    samp16 = convert_16bit_stereo_to_16bit_stereo(sample_buff_ch0[i], sample_buff_ch1[i]);
-                }
-
-                int bytes_pushed = i2s_push_sample(curr_config->i2s_num,  (char *)&samp16, delay);
-
-                // DMA buffer full - retry
-                if(bytes_pushed == 0) {
-                    i--;
-                }
-            }
-            break;
-
-        case I2S_BITS_PER_SAMPLE_24BIT:
-            // TODO
-            ESP_LOGE(TAG, "24 bit unsupported");
-            break;
-
-        case I2S_BITS_PER_SAMPLE_32BIT:
-            for (int i=0; i< num_samples; i++) {
-
-			  if (state == RENDER_STOPPED)
-			     break;
-
-			  char high0 = sample_buff_ch0[i]>>8;
-			  char mid0  = sample_buff_ch0[i] & 0xff;
-			  char high1 = sample_buff_ch1[i]>>8;
-			  char mid1  = sample_buff_ch1[i] & 0xff;
-              const char samp32[8] = {0,0,mid0,high0,0,0,mid1,high1};
-
-			  int bytes_pushed = i2s_push_sample(curr_config->i2s_num,  (char *)&samp32, delay);
-
-			  // DMA buffer full - retry
-              if(bytes_pushed == 0) {
-                    i--;
-              }
-			}
-	        break;
-    }
+    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
 }
 
 
-// Called by the NXP modifications of libmad. Sets the needed output sample rate.
-static int prevRate;
-void set_dac_sample_rate(int rate)
+void render_samples(char *buf, uint32_t len, pcm_format_t *format)
 {
-    if(rate == prevRate)
+    // handle changed sample rate
+    if(renderer_instance->sample_rate != format->sample_rate)
+    {
+        ESP_LOGI(TAG, "changing sample rate from %d to %d", renderer_instance->sample_rate, format->sample_rate);
+        uint32_t rate = format->sample_rate * renderer_instance->sample_rate_modifier;
+        i2s_set_sample_rates(renderer_instance->i2s_num, rate);
+        renderer_instance->sample_rate = format->sample_rate;
+    }
+
+    // formats match, we can write the whole block
+    if (format->bit_depth == renderer_instance->bit_depth
+            && format->buffer_format == PCM_INTERLEAVED
+            && renderer_instance->output_mode != DAC_BUILT_IN) {
+
+        // duplicate channel for a stereophonic sound spectacular
+        if (format->num_channels == 1) {
+            i2s_write_bytes(renderer_instance->i2s_num, buf, len,
+            portMAX_DELAY);
+        }
+
+        i2s_write_bytes(renderer_instance->i2s_num, buf, len, 1000 / portTICK_RATE_MS);
         return;
-    prevRate = rate;
+    }
 
-    // modifier will usually be 1.0
-    rate = rate * curr_config->sample_rate_modifier;
+    // support only 16 bit buffers for now
+    if(format->bit_depth != I2S_BITS_PER_SAMPLE_16BIT) {
+        ESP_LOGE(TAG, "unsupported decoder bit depth: %d", format->bit_depth);
+        return;
+    }
 
-    ESP_LOGI(TAG, "setting sample rate to %d\n", rate);
-    i2s_set_sample_rates(curr_config->i2s_num, rate);
+    uint8_t buf_bytes_per_sample = (format->bit_depth / 8);
+    uint32_t num_samples = len / buf_bytes_per_sample / format->num_channels; // thats stereo samples
+
+    // pointer to left / right sample position
+    char *ptr_l = buf;
+    char *ptr_r = buf + buf_bytes_per_sample;
+    uint8_t stride = buf_bytes_per_sample * 2;
+
+    // right half of the buffer contains all the right channel samples
+    if(format->buffer_format == PCM_LEFT_RIGHT)
+    {
+        ptr_r = buf + len / 2;
+        stride = buf_bytes_per_sample;
+    }
+
+
+    int bytes_pushed = 0;
+    for (int i = 0; i < num_samples; i++) {
+        if (renderer_status == STOPPED) break;
+
+        // assume 16 bit src bit_depth for now
+        short left = *(short *) ptr_l;
+        short right = *(short *) ptr_r;
+
+        if(renderer_instance->output_mode == DAC_BUILT_IN)
+        {
+            // The built-in DAC wants unsigned samples, so we shift the range
+            // from -32768-32767 to 0-65535.
+            left = left + 0x8000;
+            right = right + 0x8000;
+        }
+
+        switch (renderer_instance->bit_depth)
+        {
+            case I2S_BITS_PER_SAMPLE_16BIT:
+                ; // workaround
+                uint32_t sample = (uint16_t) left;
+                sample = (sample << 16 & 0xffff0000) | ((uint16_t) right);
+                bytes_pushed = i2s_push_sample(renderer_instance->i2s_num,
+                                (const char*) &sample, portMAX_DELAY);
+                break;
+
+            case I2S_BITS_PER_SAMPLE_32BIT:
+                ; // workaround
+                // not sure which order is correct?
+                // uint64_t samp64 = ( ((uint64_t) left << 48 & 0xffff000000000000) | ((uint64_t) right << 16) );
+                uint64_t samp64_2 = ( ((uint64_t) left << 16 & 0x00000000ffffffff) | ((uint64_t) right << 48) );
+
+                /* this is equivalent:
+                char high0 = left >> 8;
+                char mid0  = left & 0xff;
+                char high1 = right >> 8;
+                char mid1  = right & 0xff;
+                const char samp32[8] = {0, 0, mid0, high0, 0, 0, mid1, high1};
+                */
+
+                bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64_2, portMAX_DELAY);
+                break;
+
+            default:
+                ESP_LOGE(TAG, "bit depth unsupported: %d", renderer_instance->bit_depth);
+        }
+
+        // DMA buffer full - retry
+        if (bytes_pushed == 0) {
+            i--;
+        } else {
+            ptr_r += stride;
+            ptr_l += stride;
+        }
+    }
+
+    /* takes too long
+    i2s_event_t evt = {0};
+    if(xQueueReceive(i2s_event_queue, &evt, 0)) {
+        if(evt.type == I2S_EVENT_TX_DONE) {
+            ESP_LOGE(TAG, "DMA Buffer Underflow");
+        }
+    }
+    */
 }
 
+
+void renderer_zero_dma_buffer()
+{
+    i2s_zero_dma_buffer(renderer_instance->i2s_num);
+}
+
+
+renderer_config_t *renderer_get()
+{
+    return renderer_instance;
+}
 
 
 /* init renderer sink */
-void audio_renderer_init(renderer_config_t *config)
+void renderer_init(renderer_config_t *config)
 {
     // update global
-    curr_config = config;
-    state = RENDER_STOPPED;
+    renderer_instance = config;
+    renderer_status = INITIALIZED;
 
     ESP_LOGI(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", config->output_mode, config->i2s_num, config->bit_depth, config->sample_rate);
     switch (config->output_mode) {
@@ -222,7 +221,6 @@ void audio_renderer_init(renderer_config_t *config)
             break;
 
         case DAC_BUILT_IN:
-            curr_config->bit_depth = I2S_BITS_PER_SAMPLE_8BIT;
             init_i2s_dac(config);
             break;
 
@@ -233,28 +231,24 @@ void audio_renderer_init(renderer_config_t *config)
 }
 
 
-void audio_renderer_start(renderer_config_t *config)
+void renderer_start()
 {
-    // update global
-    curr_config = config;
-    state = RENDER_ACTIVE;
-
-    i2s_start(config->i2s_num);
+    renderer_status = RUNNING;
+    i2s_start(renderer_instance->i2s_num);
 
     // buffer might contain noise
-    i2s_zero_dma_buffer(config->i2s_num);
+    i2s_zero_dma_buffer(renderer_instance->i2s_num);
 }
 
-void audio_renderer_stop(renderer_config_t *config)
+void renderer_stop()
 {
-    state = RENDER_STOPPED;
-    i2s_stop(config->i2s_num);
+    renderer_status = STOPPED;
+    i2s_stop(renderer_instance->i2s_num);
 }
 
-void audio_renderer_destroy(renderer_config_t *config)
+void renderer_destroy()
 {
-    state = RENDER_STOPPED;
-    i2s_driver_uninstall(config->i2s_num);
-    free(config);
+    renderer_status = UNINITIALIZED;
+    i2s_driver_uninstall(renderer_instance->i2s_num);
 }
 

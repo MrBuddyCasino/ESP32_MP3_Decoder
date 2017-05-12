@@ -23,6 +23,9 @@
 #define TAG "audio_player"
 #define PRIO_MAD configMAX_PRIORITIES - 2
 
+static player_t *player_instance = NULL;
+static component_status_t player_status = UNINITIALIZED;
+
 static int start_decoder_task(player_t *player)
 {
     TaskFunction_t task_func;
@@ -93,7 +96,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read,
     uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
 
     // seems 4k is enough to prevent initial buffer underflow
-    uint8_t min_fill_lvl = player->buffer_pref == FAST ? 20 : 90;
+    uint8_t min_fill_lvl = player->buffer_pref == BUF_PREF_FAST ? 20 : 90;
     bool buffer_ok = fill_level > min_fill_lvl;
     if (player->decoder_status != RUNNING && buffer_ok) {
 
@@ -114,26 +117,30 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read,
 
 void audio_player_init(player_t *player)
 {
-    // initialize I2S
-    audio_renderer_init(player->renderer_config);
-    player->status = INITIALIZED;
+    player_instance = player;
+    player_status = INITIALIZED;
 }
 
-void audio_player_destroy(player_t *player)
+void audio_player_destroy()
 {
-    // halt I2S
-    audio_renderer_destroy(player->renderer_config);
-    player->status = UNINITIALIZED;
+    renderer_destroy();
+    player_status = UNINITIALIZED;
 }
 
-void audio_player_start(player_t *player)
+void audio_player_start()
 {
-    audio_renderer_start(player->renderer_config);
-    player->status = RUNNING;
+    renderer_start();
+    player_status = RUNNING;
 }
 
-void audio_player_stop(player_t *player)
+void audio_player_stop()
 {
-    audio_renderer_stop(player->renderer_config);
-    player->status = STOPPED;
+    renderer_stop();
+    player_status = STOPPED;
 }
+
+component_status_t get_player_status()
+{
+    return player_status;
+}
+

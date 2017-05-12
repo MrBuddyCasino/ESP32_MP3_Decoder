@@ -179,15 +179,14 @@ static void start_web_radio()
 
     // init player config
     radio_config->player_config = calloc(1, sizeof(player_t));
-    radio_config->player_config->status = UNINITIALIZED;
     radio_config->player_config->command = CMD_NONE;
     radio_config->player_config->decoder_status = UNINITIALIZED;
     radio_config->player_config->decoder_command = CMD_NONE;
-    radio_config->player_config->buffer_pref = SAFE;
+    radio_config->player_config->buffer_pref = BUF_PREF_SAFE;
     radio_config->player_config->media_stream = calloc(1, sizeof(media_stream_t));
 
     // init renderer
-    radio_config->player_config->renderer_config = create_renderer_config();
+    renderer_init(create_renderer_config());
 
     // start radio
     web_radio_init(radio_config);

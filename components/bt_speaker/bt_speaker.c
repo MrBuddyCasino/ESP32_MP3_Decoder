@@ -68,7 +68,7 @@ void bt_speaker_start(renderer_config_t *renderer_config)
     }
 
     /* init renderer */
-    audio_renderer_init(renderer_config);
+    renderer_init(renderer_config);
 
     /* create application task */
     bt_app_task_start_up();

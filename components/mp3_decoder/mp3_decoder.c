@@ -36,6 +36,14 @@
 
 static long buf_underrun_cnt;
 
+/* default MAD buffer format */
+pcm_format_t mad_buffer_fmt = {
+    .sample_rate = 44100,
+    .bit_depth = I2S_BITS_PER_SAMPLE_16BIT,
+    .num_channels = 2,
+    .buffer_format = PCM_LEFT_RIGHT
+};
+
 static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *player)
 {
     int bytes_to_read;
@@ -68,7 +76,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
             buf_underrun_cnt++;
             //We both silence the output as well as wait a while by pushing silent samples into the i2s system.
             //This waits for about 200mS
-            i2s_zero_dma_buffer(player->renderer_config->i2s_num);
+            renderer_zero_dma_buffer();
         } else {
             //Read some bytes from the FIFO to re-fill the buffer.
             fill_read_buffer(buf);
@@ -124,6 +132,7 @@ void mp3_decoder_task(void *pvParameters)
     mad_frame_init(frame);
     mad_synth_init(synth);
 
+
     while(1) {
 
         // calls mad_stream_buffer internally
@@ -155,7 +164,7 @@ void mp3_decoder_task(void *pvParameters)
 
     abort:
     // avoid noise
-    i2s_zero_dma_buffer(player->renderer_config->i2s_num);
+    renderer_zero_dma_buffer();
 
     free(synth);
     free(frame);
@@ -171,5 +180,24 @@ void mp3_decoder_task(void *pvParameters)
 
     ESP_LOGI(TAG, "MAD decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
+}
+
+/* Called by the NXP modifications of libmad. Sets the needed output sample rate. */
+static int prevRate;
+void set_dac_sample_rate(int rate)
+{
+    if(rate == prevRate)
+        return;
+    prevRate = rate;
+
+    mad_buffer_fmt.sample_rate = rate;
+}
+
+/* render callback for the libmad synth */
+void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
+{
+    uint32_t len = num_samples * sizeof(short) * num_channels;
+    render_samples((char*) sample_buff_ch0, len, &mad_buffer_fmt);
+    return;
 }
 

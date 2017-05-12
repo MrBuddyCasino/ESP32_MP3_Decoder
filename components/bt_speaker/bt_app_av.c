@@ -30,6 +30,8 @@
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s.h"
 
+#include "audio_renderer.h"
+
 /* a2dp event handler */
 static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param);
 /* avrc event handler */
@@ -38,6 +40,14 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param);
 
 static uint32_t m_pkt_cnt = 0;
 static esp_a2d_audio_state_t m_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
+
+static pcm_format_t bt_buffer_fmt = {
+    .sample_rate = 44100,
+    .bit_depth = I2S_BITS_PER_SAMPLE_16BIT,
+    .num_channels = 2,
+    .buffer_format = PCM_INTERLEAVED
+};
+
 
 /* callback for A2DP sink */
 void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
@@ -55,9 +65,10 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     }
 }
 
+/* cb with decoded samples */
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
-    i2s_write_bytes(I2S_NUM_0, (const char *)data, len, 0xffffffffUL);
+    render_samples((char *)data, len, &bt_buffer_fmt);
     if (++m_pkt_cnt % 100 == 0) {
         ESP_LOGE(BT_AV_TAG, "audio data pkt cnt %u", m_pkt_cnt);
     }
@@ -93,6 +104,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         m_audio_state = a2d->audio_stat.state;
         if (ESP_A2D_AUDIO_STATE_STARTED == a2d->audio_stat.state) {
             m_pkt_cnt = 0;
+            renderer_start();
         }
         break;
     }
