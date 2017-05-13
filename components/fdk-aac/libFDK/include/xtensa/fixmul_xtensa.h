@@ -88,50 +88,7 @@ amm-info@iis.fraunhofer.de
 
 ******************************************************************************/
 
-#if defined(__x86__)
-
-#if defined(_MSC_VER) && defined(_M_IX86)
-/* Intel x86 */
-
-#define FUNCTION_fixmul_DD
-#define FUNCTION_fixmuldiv2_DD
-#define FUNCTION_fixmuldiv2BitExact_DD
-#define fixmuldiv2BitExact_DD(a,b) fixmuldiv2_DD(a,b)
-#define FUNCTION_fixmulBitExact_DD
-#define fixmulBitExact_DD(a,b) fixmul_DD(a,b)
-
-#define FUNCTION_fixmuldiv2BitExact_DS
-#define fixmuldiv2BitExact_DS(a,b) fixmuldiv2_DS(a,b)
-
-#define FUNCTION_fixmulBitExact_DS
-#define fixmulBitExact_DS(a,b) fixmul_DS(a,b)
-
-inline INT fixmul_DD (INT a, const INT b)
-{
-  __asm
-  {
-    mov eax, a
-    imul b
-    shl edx, 1
-    mov a, edx
-  }
-  return a ;
-}
-
-
-inline INT fixmuldiv2_DD (INT a, const INT b)
-{
-  __asm
-  {
-    mov eax, a
-    imul b
-    mov a, edx
-  }
-  return a ;
-}
-
-/* ############################################################################# */
-#elif (defined(__GNUC__)||defined(__gnu_linux__)) && defined(__x86__)
+#if defined(__xtensa__)
 
 #define FUNCTION_fixmul_DD
 #define FUNCTION_fixmuldiv2_DD
@@ -148,31 +105,29 @@ inline INT fixmuldiv2_DD (INT a, const INT b)
 #define FUNCTION_fixmulBitExact_DS
 #define fixmulBitExact_DS(a,b) fixmul_DS(a,b)
 
+
 inline INT fixmul_DD (INT a, const INT b)
 {
   INT result;
+  __asm__ ("MULSH %0, %1, %2\n"
+            : "=r" (result)
+            : "r" (a), "r" (b));
 
-  asm( "imul %2;\n"
-       "shl $1, %0;\n"
-            : "=d"(result), "+a"(a)
-            : "r"(b) );
+  result = result << 1;
+  // "slli %0, %0, 2;\n"
+  // extern int _TIE_xt_core_SLLI(int s, immediate i);
 
   return result;
 }
 
-
-inline INT fixmuldiv2_DD (INT a, const INT b)
+inline INT fixmuldiv2_DD (const INT a, const INT b)
 {
   INT result;
-
-  asm ( "imul %2;"
-             : "=d"(result), "+a"(a)
-             : "r"(b) );
-
+  __asm__ ("MULSH %0, %1, %2"
+          : "=r" (result)
+          : "r" (a), "r" (b));
   return result;
 }
 
-#endif /* (defined(__GNUC__)||defined(__gnu_linux__)) && defined(__x86__) */
-
-#endif /* __x86__ */
+#endif /* defined(__xtensa__) */
 

@@ -2,7 +2,7 @@
 /* -----------------------------------------------------------------------------------------------------------
 Software License for The Fraunhofer FDK AAC Codec Library for Android
 
-© Copyright  1995 - 2013 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+ï¿½ Copyright  1995 - 2013 Fraunhofer-Gesellschaft zur Fï¿½rderung der angewandten Forschung e.V.
   All rights reserved.
 
  1.    INTRODUCTION
@@ -109,6 +109,9 @@ amm-info@iis.fraunhofer.de
 
 #elif defined(__powerpc__)
 #include "ppc/fixmul_ppc.h"
+
+#elif defined(__xtensa__)
+#include "xtensa/fixmul_xtensa.h"
 
 #endif /* all cores */
 
