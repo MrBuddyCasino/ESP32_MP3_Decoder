@@ -44,7 +44,7 @@ static void init_i2s(renderer_config_t *config)
             .bits_per_sample = config->bit_depth,
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
             .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
-            .dma_buf_count = 14,                            // number of buffers, 128 max.
+            .dma_buf_count = 64,                            // number of buffers, 128 max.
             .dma_buf_len = 32 * 2,                          // size of each buffer
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1        // Interrupt level 1
     };
