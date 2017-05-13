@@ -116,7 +116,7 @@ static void init_hardware()
     nvs_flash_init();
 
     // init UI
-    ui_init(GPIO_NUM_32);
+    // ui_init(GPIO_NUM_32);
 
     //Initialize the SPI RAM chip communications and see if it actually retains some bytes. If it
     //doesn't, warn user.
@@ -199,6 +199,8 @@ static void start_web_radio()
 void app_main()
 {
     ESP_LOGI(TAG, "starting app_main()");
+    ESP_LOGI(TAG, "RAM left: %u", esp_get_free_heap_size());
+
     init_hardware();
 
 #ifdef CONFIG_BT_SPEAKER_MODE

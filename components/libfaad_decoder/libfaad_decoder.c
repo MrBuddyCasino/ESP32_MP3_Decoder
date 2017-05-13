@@ -116,6 +116,7 @@ void libfaac_decoder_task(void *pvParameters)
     intptr_t param;
     bool empty_first_frame = false;
 
+
     buffer_t buf = {
         .len=FAAD_BYTE_BUFFER_SIZE
     };
@@ -129,8 +130,8 @@ void libfaac_decoder_task(void *pvParameters)
     stream_create(&input_stream, &buf);
     fill_read_buffer(&buf);
 
-    for(uint8_t *i = buf.read_pos; i < buf.fill_pos; i++)
-        printf("%X", (*i));
+    //for(uint8_t *i = buf.read_pos; i < buf.fill_pos; i++)
+    //    printf("%X", (*i));
 
     content_type_t content_type =  player->media_stream->content_type;
     ESP_LOGI(TAG, "content_type: %d", content_type);
@@ -202,10 +203,12 @@ void libfaac_decoder_task(void *pvParameters)
      */
 #endif
 
-    // asm("break.n 1");
-
-    ESP_LOGI(TAG, "sample rate: %lu channels: %u", samp_rate, chan);
-    i2s_set_clk(renderer->i2s_num, samp_rate, renderer->bit_depth, chan);
+    pcm_format_t pcm_fmt = {
+        .sample_rate = samp_rate,
+        .bit_depth = I2S_BITS_PER_SAMPLE_16BIT,
+        .num_channels = chan,
+        .buffer_format = PCM_INTERLEAVED
+    };
 
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
@@ -233,30 +236,7 @@ void libfaac_decoder_task(void *pvParameters)
         framelength = frame_samples - lead_trim;
 
         int16_t *pcm_buf = ret;
-        i2s_write_bytes(renderer->i2s_num, pcm_buf, frame_info.samples * 2, 1000 / portTICK_PERIOD_MS);
-
-        // render
-        // max delay: 50ms instead of portMAX_DELAY
-        TickType_t delay = 50 / portTICK_PERIOD_MS;
-
-
-        /*
-        for (int i = 0; i < framelength; i += 2) {
-
-            // uint32_t samp16 = buf[db][i];
-            uint32_t samp16 = convert_16bit_stereo_to_16bit_stereo(
-                    pcm_buf[lead_trim + i],
-                    pcm_buf[lead_trim + i + 1]);
-
-            int bytes_pushed = i2s_push_sample(I2S_NUM_0, (char *) &samp16,
-                    delay);
-
-            // DMA buffer full - retry
-            if (bytes_pushed == 0) {
-                i -= 2;
-            }
-        }
-        */
+        render_samples(pcm_buf, frame_info.samples * 2, &pcm_fmt);
 
         // ESP_LOGI(TAG, "stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     }

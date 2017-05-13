@@ -33,6 +33,7 @@ buffer_t *buf_create(size_t len)
     }
     buf->read_pos = buf->base;
     buf->fill_pos = buf->base;
+    buf->bytes_consumed = 0;
 
     return buf;
 }
@@ -57,7 +58,7 @@ size_t buf_free_capacity(buffer_t *buf)
     if(buf == NULL) return -1;
 
     size_t unused_capacity = (buf->base + buf->len) - buf->fill_pos;
-    return buf_data_consumed(buf) + unused_capacity;
+    return buf_data_stale(buf) + unused_capacity;
 }
 
 /* amount of bytes unread */
@@ -77,7 +78,7 @@ size_t buf_data_unread(buffer_t *buf)
 }
 
 /* amount of bytes already consumed */
-size_t buf_data_consumed(buffer_t *buf)
+size_t buf_data_stale(buffer_t *buf)
 {
     if(buf == NULL) return -1;
 
@@ -114,15 +115,17 @@ int buf_seek_rel(buffer_t *buf, uint32_t offset)
 
     // advance through buffer, loading new data as necessary
     while(1) {
-        size_t data_avail = buf->fill_pos - buf->read_pos;
+        size_t data_avail = buf_data_unread(buf);
 
         // if offset exceeds buffer capacity, load more data
         if(offset > data_avail) {
             buf->read_pos += data_avail;
             offset -= data_avail;
+            buf->bytes_consumed += data_avail;
             fill_read_buffer(buf);
         } else {
             buf->read_pos += offset;
+            buf->bytes_consumed += offset;
             break;
         }
     }
@@ -135,9 +138,12 @@ int buf_seek_abs(buffer_t *buf, uint32_t pos)
     if (buf == NULL) return -1;
 
     if(pos > buf->fill_pos) {
+        ESP_LOGE(TAG, "buf_seek_abs failed, pos = %u larger than fill_pos %u", pos, (uint32_t) buf->fill_pos);
         return -1;
     }
 
+    size_t delta = pos - (uint32_t) buf->read_pos;
+    buf->bytes_consumed += delta;
     buf->read_pos = pos;
 
     return 0;
@@ -149,17 +155,27 @@ size_t buf_read(void * ptr, size_t size, size_t count, buffer_t *buf)
         return 0;
 
     size_t bytes_to_copy = size * count;
-    if(bytes_to_copy > buf->len)
+    if(bytes_to_copy > buf->len) {
+        ESP_LOGE(TAG, "buf_read failed, bytes_to_copy = %d larger than buffer size %d", bytes_to_copy, buf->len);
         return -1;
+    }
 
-    size_t bytes_avail = buf->fill_pos - buf->read_pos;
-    if(bytes_avail < bytes_to_copy) {
+    uint8_t delay = 0;
+    while(bytes_to_copy > buf_data_unread(buf) && delay < 5000) {
         fill_read_buffer(buf);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+        delay += 50;
+    }
+
+    if(bytes_to_copy > buf_data_unread(buf)) {
+        ESP_LOGE(TAG, "buf_read failed bytes_to_copy %d, buf_data_unread %d", bytes_to_copy, buf_data_unread(buf));
+        return -1;
     }
 
     memcpy(ptr, buf->read_pos, bytes_to_copy);
 
     buf->read_pos += bytes_to_copy;
+    buf->bytes_consumed += bytes_to_copy;
 
     return bytes_to_copy;
 }

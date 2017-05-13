@@ -50,9 +50,9 @@ void fdkaac_decoder_task(void *pvParameters)
 
     /* select bitstream format */
     if (player->media_stream->content_type == AUDIO_MP4) {
+
         demux_res_t demux_res;
         stream_t input_stream;
-
         memset(&demux_res, 0, sizeof(demux_res));
 
         stream_create(&input_stream, in_buf);
@@ -73,8 +73,9 @@ void fdkaac_decoder_task(void *pvParameters)
         }
 
         // If out-of-band config data (AudioSpecificConfig(ASC) or StreamMuxConfig(SMC)) is available
-        err = aacDecoder_ConfigRaw(handle, &demux_res.codecdata,
-                &demux_res.codecdata_len);
+        uint8_t ascData[1] = {demux_res.codecdata};
+        const uint32_t ascDataLen[1] = {demux_res.codecdata_len};
+        err = aacDecoder_ConfigRaw(handle, &demux_res.codecdata, &demux_res.codecdata_len);
         if (err != AAC_DEC_OK) {
             ESP_LOGE(TAG, "aacDecoder_ConfigRaw error %d", err);
             goto cleanup;
@@ -125,7 +126,7 @@ void fdkaac_decoder_task(void *pvParameters)
         }
 
         if (err != AAC_DEC_OK) {
-            ESP_LOGE(TAG, "decode error %d", err);
+            ESP_LOGE(TAG, "decode error 0x%08x", err);
             continue;
         }
 

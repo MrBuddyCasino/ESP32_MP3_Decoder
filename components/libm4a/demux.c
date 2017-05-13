@@ -281,14 +281,10 @@ static bool read_chunk_stsd(qtmovie_t *qtmovie, size_t chunk_len)
               return false;
           }
 
-          // j=qtmovie->stream->ci->curpos+sub_chunk_len-8;
           j = qtmovie->stream->buf->read_pos + sub_chunk_len - 8;
           if (read_chunk_esds(qtmovie,sub_chunk_len)) {
-             // if (j!=qtmovie->stream->ci->curpos) {
              if (j != qtmovie->stream->buf->read_pos) {
-               // DEBUGF("curpos=%ld, j=%d - Skipping %ld bytes\n",qtmovie->stream->buf->read_pos,j,j-qtmovie->stream->buf->read_pos);
                DEBUGF("curpos=%d, sub_chunk_len=%d, j=%d - Skipping %d bytes\n", (int)qtmovie->stream->buf->read_pos, sub_chunk_len, j, j - (int) qtmovie->stream->buf->read_pos);
-               // stream_skip(qtmovie->stream,j-qtmovie->stream->ci->curpos);
                stream_skip(qtmovie->stream, j - (int) qtmovie->stream->buf->read_pos);
                // TODO hotfix
                // stream_skip(qtmovie->stream, 4);
@@ -316,7 +312,7 @@ static bool read_chunk_stsd(qtmovie_t *qtmovie, size_t chunk_len)
 }
 
 static bool read_chunk_stts(qtmovie_t *qtmovie, size_t chunk_len)
-{   if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
+{
     unsigned int i;
     uint32_t numentries;
     size_t size_remaining = chunk_len - 8;
@@ -393,7 +389,7 @@ static bool read_chunk_stsz(qtmovie_t *qtmovie, size_t chunk_len)
 }
 
 static bool read_chunk_stsc(qtmovie_t *qtmovie, size_t chunk_len)
-{   if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
+{
     unsigned int i;
     uint32_t numentries;
     size_t size_remaining = chunk_len - 8;
@@ -435,7 +431,6 @@ static bool read_chunk_stsc(qtmovie_t *qtmovie, size_t chunk_len)
 
 static bool read_chunk_stco(qtmovie_t *qtmovie, size_t chunk_len)
 {
-    if(1) { stream_skip(qtmovie->stream, chunk_len - 8); return true; } // skip this
     uint32_t i, k, old_i;
     uint32_t numentries;
     uint32_t idx = 0;
@@ -522,6 +517,7 @@ static bool read_chunk_stco(qtmovie_t *qtmovie, size_t chunk_len)
         stream_skip(qtmovie->stream, size_remaining);
     }
 
+    DEBUGF("return read_chunk_stco\n");
     return true;
 }
 
@@ -573,17 +569,19 @@ static bool read_chunk_stbl(qtmovie_t *qtmovie, size_t chunk_len)
         case MAKEFOURCC('s','t','c','o'):
             if (!read_chunk_stco(qtmovie, sub_chunk_len))
             {
+               DEBUGF("failed to read chunk stco\n");
                return false;
             }
             break;
         default:
-            DEBUGF("(stbl) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));
+            //DEBUGF("(stbl) unknown chunk id: %c%c%c%c\n",
+            //       SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
         }
 
         size_remaining -= sub_chunk_len;
     }
+    DEBUGF("return read_chunk_stbl\n");
     return true;
 }
 
@@ -638,14 +636,15 @@ static bool read_chunk_minf(qtmovie_t *qtmovie, size_t chunk_len)
             }
             break;
         default:
-            DEBUGF("(minf) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));
+            //DEBUGF("(minf) unknown chunk id: %c%c%c%c\n",
+            //       SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
 
         size_remaining -= sub_chunk_len;
     }
+    DEBUGF("return read_chunk_minf\n");
     return true;
 }
 
@@ -678,14 +677,15 @@ static bool read_chunk_mdia(qtmovie_t *qtmovie, size_t chunk_len)
             }
             break;
         default:
-            DEBUGF("(mdia) unknown chunk id: %c%c%c%c\n",
-                   SPLITFOURCC(sub_chunk_id));
+            //DEBUGF("(mdia) unknown chunk id: %c%c%c%c\n",
+            //       SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
 
         size_remaining -= sub_chunk_len;
     }
+    DEBUGF("return read_chunk_mdia\n");
     return true;
 }
 
@@ -719,14 +719,15 @@ static bool read_chunk_trak(qtmovie_t *qtmovie, size_t chunk_len)
             }
             break;
         default:
-            DEBUGF("(trak) unknown chunk id: %c%c%c%c\n",
-                    SPLITFOURCC(sub_chunk_id));
+            //DEBUGF("(trak) unknown chunk id: %c%c%c%c\n",
+            //        SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
 
         size_remaining -= sub_chunk_len;
     }
+    DEBUGF("return read_chunk_trak\n");
     return true;
 }
 
@@ -765,14 +766,15 @@ static bool read_chunk_moov(qtmovie_t *qtmovie, size_t chunk_len)
             break;
 
         default:
-            DEBUGF("(moov) unknown chunk id: %c%c%c%c\n",
-                    SPLITFOURCC(sub_chunk_id));
+            //DEBUGF("(moov) unknown chunk id: %c%c%c%c\n",
+            //        SPLITFOURCC(sub_chunk_id));
             stream_skip(qtmovie->stream, sub_chunk_len - 8);
             break;
         }
 
         size_remaining -= sub_chunk_len;
     }
+    DEBUGF("return read_chunk_moov\n");
     return true;
 }
 

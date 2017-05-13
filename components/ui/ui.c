@@ -31,7 +31,7 @@ typedef struct {
 } ui_obj_t;
 
 /** UI object instance */
-static ui_obj_t *p_ui_obj;
+static ui_obj_t *p_ui_obj = NULL;
 
 static rgbVal black;
 static rgbVal white;
@@ -67,6 +67,7 @@ void task_ui(void *pvParameters)
                 ws2812_setColors(1, &white);
             break;
         }
+        // ESP_LOGI(TAG, "task_ui stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     }
 
     vTaskDelete(NULL);
@@ -75,7 +76,8 @@ void task_ui(void *pvParameters)
 
 void ui_queue_event(ui_event_t evt)
 {
-    xQueueSend(p_ui_obj->ui_queue, &evt, 0);
+    if(p_ui_obj != NULL)
+        xQueueSend(p_ui_obj->ui_queue, &evt, 0);
 }
 
 int ui_init(gpio_num_t pin)

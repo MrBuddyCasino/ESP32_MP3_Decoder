@@ -40,9 +40,6 @@
 void stream_read(stream_t *stream, size_t size, void *buf)
 {
     buf_read(buf, size, 1, stream->buf);
-    //if(stream->buf->read_pos >= stream->buf->fill_pos) { stream->eof=1; }
-    //stream->ci->read_filebuf(buf,size);
-    //if (stream->ci->curpos >= stream->ci->filesize) { stream->eof=1; }
 }
 
 int32_t stream_read_int32(stream_t *stream)

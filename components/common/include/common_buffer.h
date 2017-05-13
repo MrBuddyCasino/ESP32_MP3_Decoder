@@ -24,6 +24,7 @@ typedef struct
     uint8_t *read_pos;
     uint8_t *fill_pos;
     uint16_t len;
+    uint32_t bytes_consumed;
 } buffer_t;
 
 /* create a buffer on the heap */
@@ -49,7 +50,7 @@ size_t buf_data_total(buffer_t *buf);
 size_t buf_data_unread(buffer_t *buf);
 
 /* stale bytes that have already been consumed */
-size_t buf_data_consumed(buffer_t *buf);
+size_t buf_data_stale(buffer_t *buf);
 
 /**
  * Reads an array of count elements, each one with a size of size bytes,
