@@ -517,7 +517,6 @@ static bool read_chunk_stco(qtmovie_t *qtmovie, size_t chunk_len)
         stream_skip(qtmovie->stream, size_remaining);
     }
 
-    DEBUGF("return read_chunk_stco\n");
     return true;
 }
 
@@ -581,7 +580,6 @@ static bool read_chunk_stbl(qtmovie_t *qtmovie, size_t chunk_len)
 
         size_remaining -= sub_chunk_len;
     }
-    DEBUGF("return read_chunk_stbl\n");
     return true;
 }
 
@@ -644,7 +642,6 @@ static bool read_chunk_minf(qtmovie_t *qtmovie, size_t chunk_len)
 
         size_remaining -= sub_chunk_len;
     }
-    DEBUGF("return read_chunk_minf\n");
     return true;
 }
 
@@ -685,7 +682,6 @@ static bool read_chunk_mdia(qtmovie_t *qtmovie, size_t chunk_len)
 
         size_remaining -= sub_chunk_len;
     }
-    DEBUGF("return read_chunk_mdia\n");
     return true;
 }
 
@@ -727,7 +723,6 @@ static bool read_chunk_trak(qtmovie_t *qtmovie, size_t chunk_len)
 
         size_remaining -= sub_chunk_len;
     }
-    DEBUGF("return read_chunk_trak\n");
     return true;
 }
 
@@ -774,7 +769,6 @@ static bool read_chunk_moov(qtmovie_t *qtmovie, size_t chunk_len)
 
         size_remaining -= sub_chunk_len;
     }
-    DEBUGF("return read_chunk_moov\n");
     return true;
 }
 
