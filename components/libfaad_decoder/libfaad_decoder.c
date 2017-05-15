@@ -235,7 +235,7 @@ void libfaac_decoder_task(void *pvParameters)
         frame_samples = frame_info.samples >> 1;
         framelength = frame_samples - lead_trim;
 
-        int16_t *pcm_buf = ret;
+        char *pcm_buf = ret;
         render_samples(pcm_buf, frame_info.samples * 2, &pcm_fmt);
 
         // ESP_LOGI(TAG, "stack: %d\n", uxTaskGetStackHighWaterMark(NULL));

@@ -97,8 +97,10 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read,
 
     // seems 4k is enough to prevent initial buffer underflow
     uint8_t min_fill_lvl = player->buffer_pref == BUF_PREF_FAST ? 20 : 90;
-    bool buffer_ok = fill_level > min_fill_lvl;
-    if (player->decoder_status != RUNNING && buffer_ok) {
+    bool enough_buffer = fill_level > min_fill_lvl;
+
+    bool early_start = (bytes_in_buf > 1028 && player->media_stream->eof);
+    if (player->decoder_status != RUNNING && (enough_buffer || early_start)) {
 
         // buffer is filled, start decoder
         if (start_decoder_task(player) != 0) {

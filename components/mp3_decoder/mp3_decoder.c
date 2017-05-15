@@ -183,19 +183,15 @@ void mp3_decoder_task(void *pvParameters)
 }
 
 /* Called by the NXP modifications of libmad. Sets the needed output sample rate. */
-static int prevRate;
 void set_dac_sample_rate(int rate)
 {
-    if(rate == prevRate)
-        return;
-    prevRate = rate;
-
     mad_buffer_fmt.sample_rate = rate;
 }
 
 /* render callback for the libmad synth */
 void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels)
 {
+    mad_buffer_fmt.num_channels = num_channels;
     uint32_t len = num_samples * sizeof(short) * num_channels;
     render_samples((char*) sample_buff_ch0, len, &mad_buffer_fmt);
     return;

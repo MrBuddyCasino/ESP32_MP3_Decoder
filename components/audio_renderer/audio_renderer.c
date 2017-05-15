@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include "esp_log.h"
+#include "driver/gpio.h"
 #include "driver/i2s.h"
 #include "MerusAudio.h"
 
@@ -147,17 +148,16 @@ void render_samples(char *buf, uint32_t len, pcm_format_t *format)
                 ; // workaround
                 // not sure which order is correct?
                 // uint64_t samp64 = ( ((uint64_t) left << 48 & 0xffff000000000000) | ((uint64_t) right << 16) );
-                uint64_t samp64_2 = ( ((uint64_t) left << 16 & 0x00000000ffffffff) | ((uint64_t) right << 48) );
+                // uint64_t samp64_2 = ( ((uint64_t) left << 16 & 0x00000000ffffffff) | ((uint64_t) right << 48) );
 
-                /* this is equivalent:
+                // bit shifting is mind-bending - this is clearer:
                 char high0 = left >> 8;
                 char mid0  = left & 0xff;
                 char high1 = right >> 8;
                 char mid1  = right & 0xff;
-                const char samp32[8] = {0, 0, mid0, high0, 0, 0, mid1, high1};
-                */
+                const char samp64[8] = {0, 0, mid0, high0, 0, 0, mid1, high1};
 
-                bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64_2, portMAX_DELAY);
+                bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64, portMAX_DELAY);
                 break;
 
             default:
