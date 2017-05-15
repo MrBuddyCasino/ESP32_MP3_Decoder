@@ -84,17 +84,16 @@ If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if
 
 ## Running without the I2S DAC
 
-The ESP32 has a built-in 8-Bit DAC that we can use.
-Run `make menuconfig` and choose "DAC_BUILT_IN" in the "Audio" submenu.
+If you don't have an I2S codec on hand, there are two options:
+- Built-In DAC (low quality)
+- PDM (high quality)
 
-You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels. You should probably add a resistor to avoid overloading the pins.
-
-PDM mode is also supported, it should give better sound than the 8 bit DAC.
+Run `make menuconfig` and choose one of them in the `Audio Output Mode` menu, then re-flash.
+You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels.
 
 ## Known Issues
 
-* AAC MP4 parser has a memory bug
-* Not all AAC streams playable
+* Some AAC streams may not be playable
 
 ## More Information
 

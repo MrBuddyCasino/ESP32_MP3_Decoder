@@ -141,21 +141,21 @@ void web_radio_gpio_handler_task(void *pvParams)
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            ESP_LOGI(TAG, "GPIO[%d] intr, val: %d", io_num, gpio_get_level(io_num));
 
             switch (get_player_status()) {
                 case RUNNING:
-                    printf("stopping player\n");
+                    ESP_LOGI(TAG, "stopping player");
                     web_radio_stop(config);
                     break;
 
                 case STOPPED:
-                    printf("starting player\n");
+                    ESP_LOGI(TAG, "starting player");
                     web_radio_start(config);
                     break;
 
                 default:
-                    printf("player state: %d\n", get_player_status());
+                    ESP_LOGI(TAG, "player state: %d", get_player_status());
             }
         }
     }
