@@ -51,10 +51,10 @@ static void init_i2s(renderer_config_t *config)
     };
 
     i2s_pin_config_t pin_config = {
-            .bck_io_num = 26,
-            .ws_io_num = 25,
-            .data_out_num = 22,
-            .data_in_num = I2S_PIN_NO_CHANGE    // Not used
+            .bck_io_num = GPIO_NUM_26,
+            .ws_io_num = GPIO_NUM_25,
+            .data_out_num = GPIO_NUM_22,
+            .data_in_num = I2S_PIN_NO_CHANGE
     };
 
     i2s_driver_install(config->i2s_num, &i2s_config, 1, &i2s_event_queue);
@@ -69,7 +69,9 @@ static void init_i2s(renderer_config_t *config)
     i2s_stop(config->i2s_num);
 }
 
-
+/**
+ * The I2S module receives and transmits left-channel data first.
+ */
 void render_samples(char *buf, uint32_t len, pcm_format_t *format)
 {
     // handle changed sample rate

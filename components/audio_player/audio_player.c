@@ -111,7 +111,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read,
 
     t = (t + 1) & 255;
     if (t == 0) {
-        printf("Buffer fill %u%%, %d bytes\n", fill_level, bytes_in_buf);
+        ESP_LOGI(TAG, "Buffer fill %u%%, %d bytes\n", fill_level, bytes_in_buf);
     }
 
     return 0;

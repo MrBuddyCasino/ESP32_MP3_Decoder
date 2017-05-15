@@ -25,7 +25,7 @@
 #include "mp3_decoder.h"
 #include "common_buffer.h"
 
-#define TAG "decoder"
+#define TAG "mad_decoder"
 
 // The theoretical maximum frame size is 2881 bytes,
 // MPEG 2.5 Layer II, 8000 Hz @ 160 kbps, with a padding slot plus 8 byte MAD_BUFFER_GUARD.
@@ -95,7 +95,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
 
 //Routine to print out an error
 static enum mad_flow error(void *data, struct mad_stream *stream, struct mad_frame *frame) {
-    printf("dec err 0x%04x (%s)\n", stream->error, mad_stream_errorstr(stream));
+    ESP_LOGE(TAG, "dec err 0x%04x (%s)", stream->error, mad_stream_errorstr(stream));
     return MAD_FLOW_CONTINUE;
 }
 
@@ -118,14 +118,14 @@ void mp3_decoder_task(void *pvParameters)
     synth = malloc(sizeof(struct mad_synth));
     buffer_t *buf = buf_create(MAX_FRAME_SIZE);
 
-    if (stream==NULL) { printf("MAD: malloc(stream) failed\n"); return; }
-    if (synth==NULL) { printf("MAD: malloc(synth) failed\n"); return; }
-    if (frame==NULL) { printf("MAD: malloc(frame) failed\n"); return; }
-    if (buf==NULL) { printf("MAD: buf_create() failed\n"); return; }
+    if (stream==NULL) { ESP_LOGE(TAG, "malloc(stream) failed\n"); return; }
+    if (synth==NULL) { ESP_LOGE(TAG, "malloc(synth) failed\n"); return; }
+    if (frame==NULL) { ESP_LOGE(TAG, "malloc(frame) failed\n"); return; }
+    if (buf==NULL) { ESP_LOGE(TAG, "buf_create() failed\n"); return; }
 
     buf_underrun_cnt = 0;
 
-    printf("MAD: Decoder start.\n");
+    ESP_LOGI(TAG, "decoder start");
 
     //Initialize mp3 parts
     mad_stream_init(stream);
@@ -176,7 +176,7 @@ void mp3_decoder_task(void *pvParameters)
 
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
-    printf("MAD: Decoder stopped.\n");
+    ESP_LOGI(TAG, "decoder stopped");
 
     ESP_LOGI(TAG, "MAD decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
