@@ -30,9 +30,11 @@ static QueueHandle_t i2s_event_queue;
 static void init_i2s(renderer_config_t *config)
 {
     i2s_mode_t mode = I2S_MODE_MASTER | I2S_MODE_TX;
+    i2s_comm_format_t communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB;
 
     if(config->output_mode == DAC_BUILT_IN) {
         mode = mode | I2S_MODE_DAC_BUILT_IN;
+        communication_format = I2S_COMM_FORMAT_I2S_MSB;
     }
 
     if(config->output_mode == PDM) {
@@ -44,7 +46,7 @@ static void init_i2s(renderer_config_t *config)
             .sample_rate = config->sample_rate,
             .bits_per_sample = config->bit_depth,
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
-            .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+            .communication_format = communication_format,
             .dma_buf_count = 32,                            // number of buffers, 128 max.
             .dma_buf_len = 32 * 2,                          // size of each buffer
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1        // Interrupt level 1
@@ -160,6 +162,7 @@ void render_samples(char *buf, uint32_t len, pcm_format_t *format)
                 const char samp64[8] = {0, 0, mid0, high0, 0, 0, mid1, high1};
 
                 bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64, portMAX_DELAY);
+
                 break;
 
             default:
