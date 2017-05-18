@@ -26,10 +26,20 @@ typedef struct
     i2s_port_t i2s_num;
 } renderer_config_t;
 
+/* ESP32 is Little Endian, I2S is Big Endian.
+ *
+ * Samples produced by a decoder will probably be LE,
+ * and I2S recordings BE.
+ */
 typedef enum
 {
     PCM_INTERLEAVED, PCM_LEFT_RIGHT
 } pcm_buffer_layout_t;
+
+typedef enum
+{
+    PCM_BIG_ENDIAN, PCM_LITTLE_ENDIAN
+} pcm_endianness_t;
 
 typedef struct
 {
@@ -37,14 +47,12 @@ typedef struct
     i2s_bits_per_sample_t bit_depth;
     uint8_t num_channels;
     pcm_buffer_layout_t buffer_format;
+    pcm_endianness_t endianness; // currently unused
 } pcm_format_t;
 
 
 /* generic renderer interface */
 void render_samples(char *buf, uint32_t len, pcm_format_t *format);
-
-/* render callback for libmad */
-void render_sample_block(short *sample_buff_ch0, short *sample_buff_ch1, int num_samples, unsigned int num_channels);
 
 void renderer_init(renderer_config_t *config);
 void renderer_start();

@@ -20,6 +20,18 @@
 
 #define TAG "common"
 
+
+static void buf_move_remaining_bytes_to_front(buffer_t *buf)
+{
+    size_t unread_data = buf_data_unread(buf);
+
+    // move remaining data to front
+    memmove(buf->base, buf->read_pos, unread_data);
+    buf->read_pos = buf->base;
+    buf->fill_pos = buf->base + unread_data;
+}
+
+
 /* creates a buffer struct and its storage on the heap */
 buffer_t *buf_create(size_t len)
 {
@@ -50,6 +62,47 @@ int buf_destroy(buffer_t *buf)
     free(buf);
 
     return 0;
+}
+
+/* TODO */
+int buf_resize(buffer_t *buf, size_t new_size)
+{
+    if(buf == NULL)
+        return -1;
+
+    if(buf->len > new_size) {
+        ESP_LOGE(TAG, "shrinking unsupported");
+        return -1;
+    }
+
+    size_t stale_bytes = buf_data_stale(buf);
+    size_t total_bytes = buf_data_total(buf);
+
+    void *new_buf = realloc(buf->base, new_size);
+    if(new_buf == NULL) {
+        ESP_LOGE(TAG, "buf_resize(%d) failed", new_size);
+        return -1;
+    }
+
+    buf->len = new_size;
+    buf->base = new_buf;
+    buf->read_pos = buf->base + stale_bytes;
+    buf->fill_pos = buf->base + total_bytes;
+
+    return 0;
+}
+
+size_t buf_write(buffer_t *buf, const void* from, size_t len)
+{
+    buf_move_remaining_bytes_to_front(buf);
+    size_t bytes_to_write = min(buf_free_capacity(buf), len);
+
+    if (bytes_to_write > 0) {
+        memcpy(buf->fill_pos, from, bytes_to_write);
+        buf->fill_pos += bytes_to_write;
+    }
+
+    return bytes_to_write;
 }
 
 /* available unused capacity */
@@ -85,15 +138,7 @@ size_t buf_data_stale(buffer_t *buf)
     return buf->read_pos - buf->base;
 }
 
-void buf_move_remaining_bytes_to_front(buffer_t *buf)
-{
-    size_t unread_data = buf_data_unread(buf);
 
-    // move remaining data to front
-    memmove(buf->base, buf->read_pos, unread_data);
-    buf->read_pos = buf->base;
-    buf->fill_pos = buf->base + unread_data;
-}
 
 size_t fill_read_buffer(buffer_t *buf)
 {
@@ -160,7 +205,7 @@ size_t buf_read(void * ptr, size_t size, size_t count, buffer_t *buf)
         return -1;
     }
 
-    uint8_t delay = 0;
+    uint16_t delay = 0;
     while(bytes_to_copy > buf_data_unread(buf) && delay < 5000) {
         fill_read_buffer(buf);
         vTaskDelay(50 / portTICK_PERIOD_MS);

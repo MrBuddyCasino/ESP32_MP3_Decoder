@@ -33,6 +33,9 @@ buffer_t *buf_create(size_t len);
 /* free the backing storage, and the struct itself */
 int buf_destroy(buffer_t *buf);
 
+/* resize the buffer via realloc() */
+int buf_resize(buffer_t *buf, size_t new_size);
+
 /**
  * Seek from the current position of the pointer.
  */
@@ -72,6 +75,10 @@ uint32_t fread32(buffer_t *buf, size_t position);
 unsigned int REV16( unsigned int value);
 unsigned int REV32( unsigned int value);
 
+/* write bytes into the buffer */
+size_t buf_write(buffer_t *buf, const void* from, size_t len);
+
+/* todo: move elsewhere */
 size_t fill_read_buffer(buffer_t *buf);
 
 #endif /* _INCLUDE_COMMON_BUFFER_H_ */

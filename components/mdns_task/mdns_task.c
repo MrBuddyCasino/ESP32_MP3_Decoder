@@ -17,8 +17,7 @@
 #include "nvs_flash.h"
 
 #include "mdns.h"
-// #include "app_main.h"
-static const int CONNECTED_BIT = 0x00000001;
+#include "wifi.h"
 
 #define TAG "mDNS"
 #define MDNS_HOSTNAME "esp32-radio"
