@@ -52,4 +52,11 @@ menuconfig BT_SPEAKER_MODE
        Web radio streaming will be unavailable.
    depends on CLASSIC_BT_ENABLED
 
+config BT_NAME
+    string "Bluetooth Name"
+	default "ESP_SPEAKER"
+	help
+		Bluetooth name exposed by the device.
+   depends on BT_SPEAKER_MODE
+
 endmenu
