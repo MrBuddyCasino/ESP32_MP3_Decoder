@@ -16,10 +16,12 @@
 #include "esp_system.h"
 #include "driver/gpio.h"
 
+#include "vector.h"
 #include "web_radio.h"
 #include "http.h"
 #include "url_parser.h"
 #include "controls.h"
+#include "playlist.h"
 
 #define TAG "web_radio"
 
@@ -104,7 +106,8 @@ static void http_get_task(void *pvParameters)
     callbacks.on_message_complete = on_message_complete_cb;
 
     // blocks until end of stream
-    int result = http_client_get(radio_conf->url, &callbacks,
+    playlist_entry_t *curr_track = playlist_curr_track(radio_conf->playlist);
+    int result = http_client_get(curr_track->url, &callbacks,
             radio_conf->player_config);
 
     if (result != 0) {

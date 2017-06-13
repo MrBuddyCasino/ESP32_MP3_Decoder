@@ -22,13 +22,16 @@ typedef struct
 {
     uint8_t *base;
     uint8_t *read_pos;
-    uint8_t *fill_pos;
+    uint8_t *write_pos;
     uint16_t len;
     uint32_t bytes_consumed;
 } buffer_t;
 
 /* create a buffer on the heap */
 buffer_t *buf_create(size_t len);
+
+/* wraps an existing buffer */
+buffer_t *buf_wrap(void *existing, size_t len);
 
 /* free the backing storage, and the struct itself */
 int buf_destroy(buffer_t *buf);
@@ -44,7 +47,7 @@ int buf_seek_rel(buffer_t *buf, uint32_t pos);
 int buf_seek_abs(buffer_t *buf, uint32_t pos);
 
 /* available unused capacity */
-size_t buf_free_capacity(buffer_t *buf);
+size_t buf_free_capacity_after_purge(buffer_t *buf);
 
 /* total amount of data in the buffer */
 size_t buf_data_total(buffer_t *buf);

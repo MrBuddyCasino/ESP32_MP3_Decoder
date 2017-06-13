@@ -14,6 +14,7 @@
 #include "http.h"
 #include "driver/i2s.h"
 
+#include "vector.h"
 #include "ui.h"
 #include "spiram_fifo.h"
 #include "audio_renderer.h"
@@ -25,6 +26,7 @@
 #ifdef CONFIG_BT_SPEAKER_MODE
 #include "bt_speaker.h"
 #endif
+#include "playlist.h"
 
 
 #define WIFI_LIST_NUM   10
@@ -104,6 +106,9 @@ static void start_web_radio()
     // init web radio
     web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
     radio_config->url = PLAY_URL;
+    radio_config->playlist = playlist_create();
+    playlist_load_pls(radio_config->playlist);
+
 
     // init player config
     radio_config->player_config = calloc(1, sizeof(player_t));

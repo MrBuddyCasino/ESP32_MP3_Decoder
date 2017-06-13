@@ -29,7 +29,7 @@ typedef struct
 } url_t;
 
 
-url_t *url_create(char *uri);
+url_t *url_parse(char *uri);
 
 void url_free(url_t *url);
 

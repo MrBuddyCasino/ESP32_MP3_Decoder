@@ -28,7 +28,7 @@
  */
 int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 {
-    url_t *url = url_create(uri);
+    url_t *url = url_parse(uri);
 
     const struct addrinfo hints = {
         .ai_family = AF_INET,

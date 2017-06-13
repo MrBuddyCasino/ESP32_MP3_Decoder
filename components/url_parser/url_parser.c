@@ -102,7 +102,7 @@ static char* url_get_path(struct http_parser_url *url, char *uri)
 }
 
 
-url_t *url_create(char *uri)
+url_t *url_parse(char *uri)
 {
     struct http_parser_url *url_parser = calloc(1, sizeof(struct http_parser_url));
     if(url_parser == NULL) {

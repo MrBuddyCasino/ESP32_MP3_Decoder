@@ -9,6 +9,7 @@
 #define INCLUDE_WEB_RADIO_H_
 
 #include "audio_player.h"
+#include "playlist.h"
 
 typedef struct {
 
@@ -17,6 +18,7 @@ typedef struct {
 typedef struct {
     char *url;
     player_t *player_config;
+    playlist_t *playlist;
 } web_radio_t;
 
 void web_radio_init(web_radio_t *config);

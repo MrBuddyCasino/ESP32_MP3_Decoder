@@ -60,7 +60,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
         }
 
         // Calculate amount of bytes we need to fill buffer.
-        bytes_to_read = min(buf_free_capacity(buf), spiRamFifoFill());
+        bytes_to_read = min(buf_free_capacity_after_purge(buf), spiRamFifoFill());
 
         // Can't take anything?
         if (bytes_to_read == 0) {
@@ -72,7 +72,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
 
             //Wait until there is enough data in the buffer. This only happens when the data feed
             //rate is too low, and shouldn't normally be needed!
-            ESP_LOGE(TAG, "Buffer underflow, need %d bytes.", buf_free_capacity(buf));
+            ESP_LOGE(TAG, "Buffer underflow, need %d bytes.", buf_free_capacity_after_purge(buf));
             buf_underrun_cnt++;
             //We both silence the output as well as wait a while by pushing silent samples into the i2s system.
             //This waits for about 200mS
