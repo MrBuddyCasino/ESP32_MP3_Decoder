@@ -42,7 +42,7 @@ Type `make menuconfig` and
   * activate / disable bt speaker mode
 * 'save', then exit
 
-To change the radio station URL, modify PLAY_URL in /main/include/playerconfig.h.
+You can edit the list of radio stations in the `/main/playlist.pls` playlist file.
 
 ## Building
 Just type 'make'.
@@ -51,7 +51,7 @@ Just type 'make'.
 Connect your serial cable and run 'make flash'. To see serial console output run 'make monitor'.
 
 ## Controls
-You can stop and start playback using the "Boot" button that is present on most development boards.
+You can advance to the next track in the playlist using the "Boot" button that is present on most development boards (GPIO0).
 
 ## UI
 You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> LED to pin 32. Its currently not doing much except blinking while wifi is connecting.

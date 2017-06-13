@@ -138,7 +138,8 @@ void audio_player_start()
 void audio_player_stop()
 {
     renderer_stop();
-    player_status = STOPPED;
+    player_instance->command = CMD_STOP;
+    // player_status = STOPPED;
 }
 
 component_status_t get_player_status()

@@ -16,7 +16,6 @@ typedef struct {
 } radio_controls_t;
 
 typedef struct {
-    char *url;
     player_t *player_config;
     playlist_t *playlist;
 } web_radio_t;

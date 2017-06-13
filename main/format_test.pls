@@ -1,0 +1,10 @@
+[playlist]
+NumberOfEntries=4
+Title1=MP3
+File1=http://mp3ad.egofm.c.nmdn.net/ps-egofmraw_192/livestream.mp3
+Title2=AAC
+File2=http://ice1.somafm.com/illstreet-128-aac
+Title3=AAC+
+File3=http://81.201.157.218:80/a1stg/livestream1.aac
+Title4=M4A
+File4=http://yourhost/some_file.m4a

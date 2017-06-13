@@ -105,7 +105,6 @@ static void start_web_radio()
 {
     // init web radio
     web_radio_t *radio_config = calloc(1, sizeof(web_radio_t));
-    radio_config->url = PLAY_URL;
     radio_config->playlist = playlist_create();
     playlist_load_pls(radio_config->playlist);
 

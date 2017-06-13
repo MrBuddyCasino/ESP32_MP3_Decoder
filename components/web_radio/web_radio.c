@@ -146,6 +146,7 @@ void web_radio_gpio_handler_task(void *pvParams)
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             ESP_LOGI(TAG, "GPIO[%d] intr, val: %d", io_num, gpio_get_level(io_num));
 
+            /*
             switch (get_player_status()) {
                 case RUNNING:
                     ESP_LOGI(TAG, "stopping player");
@@ -160,13 +161,24 @@ void web_radio_gpio_handler_task(void *pvParams)
                 default:
                     ESP_LOGI(TAG, "player state: %d", get_player_status());
             }
+            */
+            web_radio_stop(config);
+            playlist_entry_t *track = playlist_next(config->playlist);
+            ESP_LOGW(TAG, "next track: %s", track->name);
+
+
+            while(config->player_config->decoder_status != STOPPED) {
+                vTaskDelay(20 / portTICK_PERIOD_MS);
+            }
+
+            web_radio_start(config);
         }
     }
 }
 
 void web_radio_init(web_radio_t *config)
 {
-    // controls_init(web_radio_gpio_handler_task, 2048, config);
+    controls_init(web_radio_gpio_handler_task, 2048, config);
     audio_player_init(config->player_config);
 }
 

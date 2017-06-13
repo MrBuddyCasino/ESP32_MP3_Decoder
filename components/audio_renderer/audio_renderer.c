@@ -119,7 +119,7 @@ void render_samples(char *buf, uint32_t buf_len, pcm_format_t *buf_desc)
         // don't block, rather retry
         int bytes_left = buf_len;
         int bytes_written = 0;
-        while(bytes_left > 0) {
+        while(bytes_left > 0 && renderer_status != STOPPED) {
             bytes_written = i2s_write_bytes(renderer_instance->i2s_num, buf, bytes_left, 0);
             bytes_left -= bytes_written;
             buf += bytes_written;
@@ -151,6 +151,7 @@ void render_samples(char *buf, uint32_t buf_len, pcm_format_t *buf_desc)
     }
 
     int bytes_pushed = 0;
+    TickType_t max_wait = 20 / portTICK_PERIOD_MS; // portMAX_DELAY = bad idea
     for (int i = 0; i < num_samples; i++) {
         if (renderer_status == STOPPED) break;
 
@@ -168,7 +169,7 @@ void render_samples(char *buf, uint32_t buf_len, pcm_format_t *buf_desc)
             uint32_t sample = (uint16_t) left;
             sample = (sample << 16 & 0xffff0000) | ((uint16_t) right);
 
-            bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &sample, portMAX_DELAY);
+            bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &sample, max_wait);
         }
         else {
 
@@ -180,14 +181,14 @@ void render_samples(char *buf, uint32_t buf_len, pcm_format_t *buf_desc)
                     /* low - high / low - high */
                     const char samp32[4] = {ptr_l[0], ptr_l[1], ptr_r[0], ptr_r[1]};
 
-                    bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp32, portMAX_DELAY);
+                    bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp32, max_wait);
                     break;
 
                 case I2S_BITS_PER_SAMPLE_32BIT:
                     ; // workaround
 
                     const char samp64[8] = {0, 0, ptr_l[0], ptr_l[1], 0, 0, ptr_r[0], ptr_r[1]};
-                    bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64, portMAX_DELAY);
+                    bytes_pushed = i2s_push_sample(renderer_instance->i2s_num, (const char*) &samp64, max_wait);
                     break;
 
                 default:
