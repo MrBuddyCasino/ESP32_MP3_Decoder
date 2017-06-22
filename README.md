@@ -45,7 +45,9 @@ Type `make menuconfig` and
 You can edit the list of radio stations in the `/main/playlist.pls` playlist file.
 
 ## Building
-Just type 'make'.
+If this is the first time, initialize the submodules:
+`git submodule init && git submodule update`
+Then, just type `make`.
 
 ## Flashing
 Connect your serial cable and run 'make flash'. To see serial console output run 'make monitor'.
