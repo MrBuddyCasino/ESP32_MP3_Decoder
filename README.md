@@ -46,7 +46,7 @@ You can edit the list of radio stations in the `/main/playlist.pls` playlist fil
 
 ## Building
 If this is the first time, initialize the submodules:
-`git submodule init && git submodule update`
+`git submodule init && git submodule update`.
 Then, just type `make`.
 
 ## Flashing
