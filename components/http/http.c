@@ -77,7 +77,7 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 
     // write http request
     char *request;
-    if(asprintf(&request, "GET %s HTTP/1.0\r\nHost: %s:%d\r\nUser-Agent: curl/7.51.0\r\nAccept: */*\r\n\r\n", url->path, url->host, url->port) < 0)
+    if(asprintf(&request, "GET %s HTTP/1.0\r\nHost: %s:%d\r\nUser-Agent: ESP32\r\nAccept: */*\r\n\r\n", url->path, url->host, url->port) < 0)
     {
         return ESP_FAIL;
     }
