@@ -82,6 +82,7 @@ static int on_headers_complete_cb(http_parser *parser)
 
 static int on_body_cb(http_parser* parser, const char *at, size_t length)
 {
+    //printf("%.*s", length, at);
     return audio_stream_consumer(at, length, parser->data);
 }
 
