@@ -96,6 +96,11 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
     case ESP_A2D_CONNECTION_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(p_param);
         ESP_LOGI(BT_AV_TAG, "a2dp conn_state_cb, state %d", a2d->conn_stat.state);
+        if (ESP_A2D_CONNECTION_STATE_CONNECTED == a2d->conn_stat.state) {
+            // renderer_start();
+        } else if (ESP_A2D_CONNECTION_STATE_DISCONNECTED == a2d->conn_stat.state) {
+            renderer_stop();
+        }
         break;
     }
     case ESP_A2D_AUDIO_STATE_EVT: {
@@ -105,6 +110,10 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (ESP_A2D_AUDIO_STATE_STARTED == a2d->audio_stat.state) {
             m_pkt_cnt = 0;
             renderer_start();
+        } else if (ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND == a2d->audio_stat.state){
+            renderer_stop();
+        } else if (ESP_A2D_AUDIO_STATE_STOPPED == a2d->audio_stat.state){
+            renderer_stop();
         }
         break;
     }
