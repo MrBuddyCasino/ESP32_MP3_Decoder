@@ -43,6 +43,15 @@ static void init_i2s(renderer_config_t *config)
         mode = mode | I2S_MODE_PDM;
     }
 
+    /* don't use audio pll on buggy rev0 chips */
+    int use_apll = 0;
+    esp_chip_info_t out_info;
+    esp_chip_info(&out_info);
+    if(out_info.revision > 0) {
+        use_apll = 1;
+        ESP_LOGI(TAG, "chip revision %d, enabling APLL", out_info.revision);
+    }
+
     /*
      * Allocate just enough to decode AAC+, which has huge frame sizes.
      *
@@ -60,7 +69,8 @@ static void init_i2s(renderer_config_t *config)
             .communication_format = comm_fmt,
             .dma_buf_count = 32,                            // number of buffers, 128 max.
             .dma_buf_len = 64,                          // size of each buffer
-            .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1        // Interrupt level 1
+            .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,        // Interrupt level 1
+            .use_apll = use_apll
     };
 
     i2s_pin_config_t pin_config = {

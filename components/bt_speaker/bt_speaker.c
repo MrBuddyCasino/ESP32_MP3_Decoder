@@ -33,6 +33,7 @@
 #include "../bt_speaker/bt_app_core.h"
 
 #include "audio_renderer.h"
+#define TAG "bt_speaker"
 
 /* event for handler "bt_av_hdl_stack_up */
 enum {
@@ -83,6 +84,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     ESP_LOGD(BT_AV_TAG, "%s evt %d", __func__, event);
     switch (event) {
     case BT_APP_EVT_STACK_UP: {
+        ESP_LOGI(TAG, "starting \"%s\"", CONFIG_BT_NAME);
         /* set up device name */
         esp_bt_dev_set_device_name(CONFIG_BT_NAME);
 
