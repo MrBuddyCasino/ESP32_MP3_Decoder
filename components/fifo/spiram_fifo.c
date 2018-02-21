@@ -9,11 +9,12 @@
  *
  * Modification history:
  *     2015/06/02, v1.0 File created.
+ *     2018/02/16, icy-meta-parser in spiRamFifoWrite created by reini
 *******************************************************************************/
 #include "esp_system.h"
 #include "string.h"
 #include <stdio.h>
-
+#include "http.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -48,7 +49,7 @@ static char fakespiram[SPIRAMSIZE];
 #define spiRamWrite(pos, buf, n) memcpy(&fakespiram[pos], buf, n)
 #define spiRamRead(pos, buf, n) memcpy(buf, &fakespiram[pos], n)
 #endif
-
+int flagfifo=0,rambytes=0,metamax=0,it;//sync icy-metaint:
 //Initialize the FIFO
 int spiRamFifoInit() {
 	fifoRpos=0;
@@ -103,9 +104,85 @@ void spiRamFifoRead(char *buff, int len) {
 	}
 }
 
-//Write bytes to the FIFO
+//Write bytes to the FIFO and pars icy-metadata
 void spiRamFifoWrite(const char *buff, int buffLen) {
-	int n;
+      int n,fimax,i=0,r1=0,r2=0,r3=1,text=0;
+          n = buffLen;
+          fimax=buffLen;
+          buffLen=0;
+
+              if(httpmeta==1) {   //if new http-request
+                   metamax=icymeta;
+                   httpmeta=0;
+                   rambytes=0;
+                   flagfifo=0;
+                   it=-1;
+                   icymeta_text[0]=0;
+                   icymeta_text[62]=0;
+               }
+                      if(metamax>0) {  // if icy-metaint: Data available
+                         r1=metamax-rambytes;
+                          if(flagfifo==0&&(r1-n)<0) {
+                            buffLen=r1;
+                            i=r1+1;
+                            r2=buff[r1];
+                            if(r2!=0) {
+                               flagfifo=2;
+                               //printf("StreamTitle_found \n");//only for testing
+                               it=-1;
+                             }   else  {
+                                   //printf("Stream-sync ok \n");
+                                   r3=0;
+                                   goto next1;
+                                }
+                           }
+
+           rambytes +=n;
+               
+              if(flagfifo>0) {
+                   while (buff[i]!=0&&i<fimax&&flagfifo==2) {
+                      //printf("%c",buff[i]);         //Monitor StreamTitle only for testing
+                      if(it>=0&&it<59) {
+                         if(buff[i]==0x3b)  //first ";" set End of text
+                            icymeta_text[it] =0;
+                              else 
+                                icymeta_text[it] =buff[i];
+                                it++;
+                      }         if(it<0&&buff[i]==0x27) //start with '
+                                  it++;
+                                  i++;
+                   }
+                                    if(i<fimax)
+                                      flagfifo=1;
+
+                                      if(flagfifo==1) {
+                                        icymeta_text[63]=0;      //set End of text
+                                        while(it<62) {icymeta_text[it]=0x20;it++;};       
+                                        icymeta_text[62]=0xff; //flag for text available
+                                       }  
+
+                 while (buff[i]==0&&i<fimax&&flagfifo==1) {i++;if(buff[i]!=0) flagfifo=0;};
+                 next1:;
+                 rambytes=n-i;
+              }
+
+       fimax =fimax-i;
+       text =i-buffLen;
+
+       if(buffLen==0) {
+          if(fimax<=0)    {
+             buff += n;
+             goto ende1;  };
+            
+             buffLen=fimax;
+             fimax=0;
+             buff += text;
+        }
+                     }
+                         else             { //if no icy-metaint: , normal fifo mode
+                                text=1;
+                                buffLen=n;}
+
 	while (buffLen > 0) {
 		n = buffLen;
 
@@ -136,7 +213,16 @@ void spiRamFifoWrite(const char *buff, int buffLen) {
 			xSemaphoreGive(mux);
 			xSemaphoreGive(semCanRead); // Tell reader thread there's some data in the fifo.
 		}
+      if(buffLen <=0&&metamax!=0)   {
+         if((text<=1||fimax<=1)&&r3>0)
+            break;       
+         buff +=text;
+         buffLen=fimax;
+         text=1;
+         r3++;
+       }
 	}
+ende1:;
 }
 
 //Get amount of bytes in use
