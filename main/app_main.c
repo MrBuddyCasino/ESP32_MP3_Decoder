@@ -137,7 +137,14 @@ void app_main()
     start_wifi();
     start_web_radio();
 #endif
-
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
     // ESP_LOGI(TAG, "app_main stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
+
+    while (1) {
+      vTaskDelay(40/portTICK_RATE_MS);
+//example Monitoring new  StreamTitle
+if(icymeta_text[62]==0xff) {
+printf("\nStreamTitle found \n %s \n",icymeta_text);
+icymeta_text[62]=0xee;     }
+    }
 }
