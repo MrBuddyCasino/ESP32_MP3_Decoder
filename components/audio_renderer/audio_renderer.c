@@ -47,9 +47,9 @@ static void init_i2s(renderer_config_t *config)
     int use_apll = 0;
     esp_chip_info_t out_info;
     esp_chip_info(&out_info);
-    if(out_info.revision > 0) {
+    if(out_info.revision > 0 && (config->output_mode == I2S || config->output_mode == I2S_MERUS)) {
         use_apll = 1;
-        ESP_LOGI(TAG, "chip revision %d, enabling APLL", out_info.revision);
+        ESP_LOGI(TAG, "chip revision %d, enabling APLL for I2S", out_info.revision);
     }
 
     /*
