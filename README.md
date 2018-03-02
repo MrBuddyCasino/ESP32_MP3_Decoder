@@ -30,6 +30,12 @@ Add /path/to/xtensa-esp32-elf/bin to your PATH:
 
     export PATH=/path/to/xtensa-esp32-elf/bin:$PATH
 
+Clone this repository:
+
+    git clone https://github.com/MrBuddyCasino/ESP32_MP3_Decoder.git
+    cd ESP32_MP3_Decoder/
+    git submodule init && git submodule update
+
 ## Configuration
 
 The serial port and wifi credentials are configured using make.
