@@ -31,27 +31,27 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 
         switch(esp_wifi_connect()) {
             case ESP_OK:
-                ESP_LOGI(TAG, "connected successfully")
+                ESP_LOGI(TAG, "connected successfully");
                 break;
 
             case ESP_ERR_WIFI_NOT_INIT:
-                ESP_LOGE(TAG, "WiFi is not initialized by eps_wifi_init")
+                ESP_LOGE(TAG, "WiFi is not initialized by eps_wifi_init");
                 break;
 
             case ESP_ERR_WIFI_NOT_STARTED:
-                ESP_LOGE(TAG, "WiFi is not started by esp_wifi_start")
+                ESP_LOGE(TAG, "WiFi is not started by esp_wifi_start");
                 break;
 
             case ESP_ERR_WIFI_CONN:
-                ESP_LOGE(TAG, "WiFi internal error, station or soft-AP control block wrong")
+                ESP_LOGE(TAG, "WiFi internal error, station or soft-AP control block wrong");
                 break;
 
             case ESP_ERR_WIFI_SSID:
-                ESP_LOGE(TAG, "SSID of AP which station connects is invalid")
+                ESP_LOGE(TAG, "SSID of AP which station connects is invalid");
                 break;
 
             default:
-                ESP_LOGE(TAG, "Unknown return code")
+                ESP_LOGE(TAG, "Unknown return code");
                 break;
         }
 
