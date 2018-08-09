@@ -66,7 +66,7 @@ You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> L
 
 ## Bluetooth Speaker Mode
 
-Enable `Classic Bluetooth` in `Component config > Bluetooth > Bluedroid Bluetooth stack enabled > Classic Bluetooth`, enable `A2DP > A2DP ROLE config (SINK)`, then enable `Bluetooth Speaker Mode` via `make menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER". If you don't like that name, you can change it via menuconfig.
+Enable `Classic Bluetooth` in `Component config > Bluetooth > Bluedroid Bluetooth stack enabled > Classic Bluetooth`, enable `A2DP`, then enable `Bluetooth Speaker Mode` via `make menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER". If you don't like that name, you can change it via menuconfig.
 
 ## Connecting the I2S codec
 
