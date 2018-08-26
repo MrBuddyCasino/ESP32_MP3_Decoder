@@ -42,7 +42,7 @@ static int on_header_field_cb(http_parser *parser, const char *at, size_t length
         *c = tolower(*c);
 
     curr_header_field = 0;
-    if (strstr(at, "content-type")) {
+    if (strncmp(at, "content-type", length) == 0) {
         curr_header_field = HDR_CONTENT_TYPE;
     }
 
