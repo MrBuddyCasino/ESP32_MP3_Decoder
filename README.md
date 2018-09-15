@@ -90,6 +90,8 @@ GPIO22        - DATA
 
 If you're using the MAX98357A, connect GND to ground and Vin to +5V (or +3.3V if +5V is unavailable). SD can remain unconnected, and GAIN too unless you want to make it louder or lower. I also recommend using a potentiometer for volume regulation.
 
+If you are using PCM5102, you need to pull the XMT pin high for it output audio (0v = mute, 3.3v = unmute) . 
+
 ## Running without the I2S DAC
 
 If you don't have an I2S codec on hand, there are two options:
