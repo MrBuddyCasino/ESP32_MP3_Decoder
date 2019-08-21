@@ -21,6 +21,10 @@
 
 #define TAG "http_client"
 
+char icymeta_text[ICY_META_BUFF_LEN];
+
+bool newHttpRequest = false;
+int icymeta_interval = 0;
 
 /**
  * @brief simple http_get
@@ -77,7 +81,10 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
 
     // write http request
     char *request;
-    if(asprintf(&request, "GET %s HTTP/1.0\r\nHost: %s:%d\r\nUser-Agent: ESP32\r\nAccept: */*\r\n\r\n", url->path, url->host, url->port) < 0)
+    if (asprintf(&request, "%s%s%s%s%s%s%s%s%s", "GET ", url->path,
+                 " HTTP/1.0\r\n", "Host:", url->host, "\r\n",
+                 "User-Agent: ESP32\r\n", "Accept: */*\r\n",
+                 "Icy-MetaData: 1\r\n\r\n") < 0)
     {
         return ESP_FAIL;
     }
@@ -92,8 +99,10 @@ int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
     free(request);
     ESP_LOGI(TAG, "... socket send success");
 
-
     /* Read HTTP response */
+    newHttpRequest = true;
+    icymeta_interval = 0; // icy-metaint Parser
+
     char recv_buf[64];
     bzero(recv_buf, sizeof(recv_buf));
     ssize_t recved;

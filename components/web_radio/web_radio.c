@@ -24,52 +24,122 @@
 #include "playlist.h"
 
 #define TAG "web_radio"
+#define HDR_KV_BUFF_LEN 128
 
 typedef enum
 {
-    HDR_CONTENT_TYPE = 1
+    HDR_CONTENT_TYPE = 1,
+    HDR_ICY_METAINT = 2
 } header_field_t;
 
-static header_field_t curr_header_field = 0;
-static content_type_t content_type = 0;
-static bool headers_complete = false;
+typedef enum {
+    HDR_UNDEF,
+    HDR_KEY,
+    HDR_VALUE,
+    HDR_COMPLETE
+} header_processing_state;
+
+header_field_t curr_header_field = 0;
+content_type_t content_type = 0;
+
+header_processing_state hdr_state= HDR_UNDEF;
+char hdr_key_buff[HDR_KV_BUFF_LEN] = {0};
+char hdr_value_buff[HDR_KV_BUFF_LEN] = {0};
+int hdr_key_buff_len = 0;
+int hdr_value_buff_len = 0;
+
+void process_header_key(const char *at, size_t length);
+void process_header_key_complete();
+void process_header_value(const char *at, size_t length);
+void process_header_value_complete();
+
+void process_header_key(const char *at, size_t length) {
+    if (hdr_state == HDR_VALUE) {
+        process_header_value_complete();
+    }
+    hdr_state = HDR_KEY;
+
+    memcpy(&(hdr_key_buff[hdr_key_buff_len]), at,
+            min(length,  HDR_KV_BUFF_LEN - hdr_key_buff_len - 1));
+    hdr_key_buff_len += length;
+}
+
+void process_header_key_complete() {
+    if (hdr_state != HDR_KEY) {
+        return;
+    }
+
+    printf("< %s : ",hdr_key_buff);
+
+    curr_header_field = 0;
+    if (strncmp(&hdr_key_buff, "content-type", hdr_key_buff_len) == 0) {
+        curr_header_field = HDR_CONTENT_TYPE;
+    } else if (strncmp(&hdr_key_buff, "icy-metaint", hdr_key_buff_len) == 0) {
+        curr_header_field = HDR_ICY_METAINT;
+    }
+    memset(&hdr_key_buff, 0, HDR_KV_BUFF_LEN);
+    hdr_key_buff_len = 0;
+}
+
+void process_header_value(const char *at, size_t length) {
+    if (hdr_state == HDR_KEY) {
+        process_header_key_complete();
+    }
+    hdr_state = HDR_VALUE;
+
+    memcpy(&(hdr_value_buff[hdr_value_buff_len]), at, min(length,  HDR_KV_BUFF_LEN - hdr_value_buff_len - 1));
+    hdr_value_buff_len += length;
+}
+
+void process_header_value_complete() {
+    if (hdr_state != HDR_VALUE) {
+        return;
+    }
+
+    printf("%s\n",hdr_value_buff);
+
+    if (curr_header_field == HDR_CONTENT_TYPE) {
+        if (strstr(&hdr_value_buff, "application/octet-stream")) content_type = OCTET_STREAM;
+        if (strstr(&hdr_value_buff, "audio/aac")) content_type = AUDIO_AAC;
+        if (strstr(&hdr_value_buff, "audio/mp4")) content_type = AUDIO_MP4;
+        if (strstr(&hdr_value_buff, "audio/x-m4a")) content_type = AUDIO_MP4;
+        if (strstr(&hdr_value_buff, "audio/mpeg")) content_type = AUDIO_MPEG;
+
+        if(content_type == MIME_UNKNOWN) {
+            ESP_LOGE(TAG, "unknown content-type: %s", (char*) &hdr_value_buff);
+            return -1;
+        }
+    } else if (curr_header_field == HDR_ICY_METAINT) {
+        icymeta_interval = atoi(&hdr_value_buff);
+    }
+
+    memset(&hdr_value_buff, 0, HDR_KV_BUFF_LEN);
+    hdr_value_buff_len = 0;
+}
 
 static int on_header_field_cb(http_parser *parser, const char *at, size_t length)
 {
-    // convert to lower case
+    // convert to lower case for ease of string comparision
     unsigned char *c = (unsigned char *) at;
-    for (; *c; ++c)
+    for (; c < (at + length); ++c) {
         *c = tolower(*c);
-
-    curr_header_field = 0;
-    if (strncmp(at, "content-type", length) == 0) {
-        curr_header_field = HDR_CONTENT_TYPE;
     }
 
+    process_header_key(at, length);
     return 0;
 }
 
 static int on_header_value_cb(http_parser *parser, const char *at, size_t length)
 {
-    if (curr_header_field == HDR_CONTENT_TYPE) {
-        if (strstr(at, "application/octet-stream")) content_type = OCTET_STREAM;
-        if (strstr(at, "audio/aac")) content_type = AUDIO_AAC;
-        if (strstr(at, "audio/mp4")) content_type = AUDIO_MP4;
-        if (strstr(at, "audio/x-m4a")) content_type = AUDIO_MP4;
-        if (strstr(at, "audio/mpeg")) content_type = AUDIO_MPEG;
-
-        if(content_type == MIME_UNKNOWN) {
-            ESP_LOGE(TAG, "unknown content-type: %s", at);
-            return -1;
-        }
-    }
-
+    process_header_value(at, length);
     return 0;
 }
 
 static int on_headers_complete_cb(http_parser *parser)
 {
-    headers_complete = true;
+    process_header_value_complete();
+    hdr_state = HDR_COMPLETE;
+
     player_t *player_config = parser->data;
 
     player_config->media_stream->content_type = content_type;
