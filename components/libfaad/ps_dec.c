@@ -252,7 +252,9 @@ static void hybrid_free(hyb_info *hyb)
             faad_free(hyb->temp[i]);
     }
     if (hyb->temp)
+    {
         faad_free(hyb->temp);
+    }
 
 	faad_free(hyb);
 }
