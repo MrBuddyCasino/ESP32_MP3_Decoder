@@ -1,62 +1,66 @@
 menu "Web Radio / Bluetooth Speaker"
 
-menu "Wifi Configuration"
+    menu "BT Configuration"
 
-config WIFI_SSID
-    string "WiFi SSID"
-	default "myssid"
-	help
-		SSID (network name) to connect to.
+        config BT_SPEAKER_MODE
+            bool "Bluetooth Speaker Mode"
+            help
+            Select this option to turn on bluetooth speaker mode.
+            Web radio streaming will be unavailable.
+            depends on CLASSIC_BT_ENABLED && A2DP_ENABLE
 
-config WIFI_PASSWORD
-    string "WiFi Password"
-	default "myssid"
-	help
-		WiFi password (WPA or WPA2) to use.
+        config BT_NAME
+            string "Bluetooth Name"
+            default "ESP_SPEAKER"
+            help
+                Bluetooth name exposed by the device.
+            # depends on BT_SPEAKER_MODE
 
-		Can be left blank if the network has no security set.
+    endmenu
 
-endmenu
+    menu "Wifi Configuration"
 
-menu "Audio Output"
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) to connect to.
 
-choice
-    prompt "Select Audio Output Mode"
-    default I2S
-    help
-        This option selects the audio output.
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "myssid"
+        help
+            WiFi password (WPA or WPA2) to use.
 
-    config AUDIO_OUTPUT_MODE_I2S
-        bool "Generic I2S"
-    config AUDIO_OUTPUT_MODE_I2S_MERUS
-        bool "Merus Audio I2S"
-    config AUDIO_OUTPUT_MODE_DAC_BUILT_IN
-        bool "Built-In DAC"
-    config AUDIO_OUTPUT_MODE_PDM
-        bool "PDM"
-endchoice
+            Can be left blank if the network has no security set.
 
-config AUDIO_OUTPUT_MODE
-    int
-    default 0 if AUDIO_OUTPUT_MODE_I2S
-    default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
-    default 2 if AUDIO_OUTPUT_MODE_DAC_BUILT_IN
-    default 3 if AUDIO_OUTPUT_MODE_PDM
+    endmenu
 
-endmenu
+    menu "Audio Output"
 
-menuconfig BT_SPEAKER_MODE
-    bool "Bluetooth Speaker Mode"
-    help
-       Select this option to turn on bluetooth speaker mode.
-       Web radio streaming will be unavailable.
-   depends on CLASSIC_BT_ENABLED && A2DP_ENABLE
+    choice
+        prompt "Select Audio Output Mode"
+        default AUDIO_OUTPUT_MODE_I2S
+        help
+            This option selects the audio output.
 
-config BT_NAME
-    string "Bluetooth Name"
-	default "ESP_SPEAKER"
-	help
-		Bluetooth name exposed by the device.
-   depends on BT_SPEAKER_MODE
+        config AUDIO_OUTPUT_MODE_I2S
+            bool "Generic I2S"
+        config AUDIO_OUTPUT_MODE_I2S_MERUS
+            bool "Merus Audio I2S"
+        config AUDIO_OUTPUT_MODE_DAC_BUILT_IN
+            bool "Built-In DAC"
+        config AUDIO_OUTPUT_MODE_PDM
+            bool "PDM"
+    endchoice
+
+    config AUDIO_OUTPUT_MODE
+        int
+        default 0 if AUDIO_OUTPUT_MODE_I2S
+        default 1 if AUDIO_OUTPUT_MODE_I2S_MERUS
+        default 2 if AUDIO_OUTPUT_MODE_DAC_BUILT_IN
+        default 3 if AUDIO_OUTPUT_MODE_PDM
+
+    endmenu
 
 endmenu

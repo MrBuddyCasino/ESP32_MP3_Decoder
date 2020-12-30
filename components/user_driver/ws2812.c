@@ -14,7 +14,7 @@
 #include <soc/dport_reg.h>
 #include <driver/gpio.h>
 #include <soc/gpio_sig_map.h>
-#include <esp_intr.h>
+#include <esp_intr_alloc.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

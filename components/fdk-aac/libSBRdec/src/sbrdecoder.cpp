@@ -2,7 +2,7 @@
 /* -----------------------------------------------------------------------------------------------------------
 Software License for The Fraunhofer FDK AAC Codec Library for Android
 
-© Copyright  1995 - 2015 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+ï¿½ Copyright  1995 - 2015 Fraunhofer-Gesellschaft zur Fï¿½rderung der angewandten Forschung e.V.
   All rights reserved.
 
  1.    INTRODUCTION
@@ -958,7 +958,7 @@ SBR_ERROR sbrDecoder_Parse(
         int fGlobalIndependencyFlag
         )
 {
-  SBR_DECODER_ELEMENT   *hSbrElement;
+  SBR_DECODER_ELEMENT   *hSbrElement = NULL;
   HANDLE_SBR_HEADER_DATA hSbrHeader = NULL;
   HANDLE_SBR_CHANNEL    *pSbrChannel;
 

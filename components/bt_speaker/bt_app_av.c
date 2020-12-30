@@ -199,8 +199,8 @@ static void bt_av_hdl_avrc_evt(uint16_t event, void *p_param)
         break;
     }
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT: {
-        ESP_LOGI(BT_AV_TAG, "avrc event notification: %d, param: %d", rc->change_ntf.event_id, rc->change_ntf.event_parameter);
-        bt_av_notify_evt_handler(rc->change_ntf.event_id, rc->change_ntf.event_parameter);
+        ESP_LOGI(BT_AV_TAG, "AVRC event notification: %d", rc->change_ntf.event_id);
+        bt_av_notify_evt_handler(rc->change_ntf.event_id, &rc->change_ntf.event_parameter);
         break;
     }
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
