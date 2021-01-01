@@ -1,7 +1,7 @@
 idf_component_register(SRCS 
                             "libfaad_decoder.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES common libfaad libm4a audio_renderer )
+                    PRIV_REQUIRES common libfaad libm4a audio_renderer audio_player fifo)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE 
         -DHAVE_MEMCPY 

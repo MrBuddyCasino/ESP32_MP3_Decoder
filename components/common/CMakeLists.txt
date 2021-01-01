@@ -1,7 +1,5 @@
-idf_component_register(SRCS 
-                            "common_buffer.c"
+idf_component_register(SRCS "common_buffer.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES fifo
+                    PRIV_REQUIRES fifo wpa_supplicant
 )
-                    #REQUIRES fifo wpa_supplicant)
 
