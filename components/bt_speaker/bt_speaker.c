@@ -46,14 +46,14 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 
 void bt_speaker_start(renderer_config_t *renderer_config)
 {
-
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
         ESP_LOGE(BT_AV_TAG, "%s initialize controller failed\n", __func__);
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BTDM) != ESP_OK) {
+    if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != ESP_OK) {
         ESP_LOGE(BT_AV_TAG, "%s enable controller failed\n", __func__);
         return;
     }
@@ -76,6 +76,25 @@ void bt_speaker_start(renderer_config_t *renderer_config)
 
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+
+#if (CONFIG_BT_SSP_ENABLED == true)
+    /* Set default parameters for Secure Simple Pairing */
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+#endif
+
+    /*
+     * Set default parameters for Legacy Pairing
+     * Use fixed pin code
+     */
+    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+    esp_bt_pin_code_t pin_code;
+    pin_code[0] = '1';
+    pin_code[1] = '2';
+    pin_code[2] = '3';
+    pin_code[3] = '4';
+    esp_bt_gap_set_pin(pin_type, 4, pin_code);
 }
 
 
