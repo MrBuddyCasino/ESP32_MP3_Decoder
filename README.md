@@ -9,6 +9,10 @@ Features:
 * Bluetooth Speaker mode
 
 ## Origin
+This is a fork from the popular [ESP32 Web Radio](https://github.com/MrBuddyCasino/ESP32_MP3_Decoder) by Michael Böckling.
+The original repository rely on an old version of ESP-IDF. This version intends to work on the current latest version end of 2020: v4.3-dev.  
+Using ESP-ADF would be a valuable alternative but it doesn't seem stable enough for non official ESP-ADF boards.
+****** This file requires additional updates *********
 
 This project is based on Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
