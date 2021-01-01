@@ -14,7 +14,7 @@ menu "Web Radio / Bluetooth Speaker"
             default "ESP_SPEAKER"
             help
                 Bluetooth name exposed by the device.
-            # depends on BT_SPEAKER_MODE
+            depends on BT_SPEAKER_MODE
 
     endmenu
 
