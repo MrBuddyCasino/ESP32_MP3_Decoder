@@ -20,12 +20,12 @@
 #define TAG "url_parser"
 
 
-static char* url_get_scheme(struct http_parser_url *url, char *uri)
+static char* url_get_scheme(struct http_parser_url *url, const char *uri)
 {
     return strndup(&uri[url->field_data[UF_SCHEMA].off], url->field_data[UF_SCHEMA].len);
 }
 
-static char* url_get_host(struct http_parser_url *url, char *uri)
+static char* url_get_host(struct http_parser_url *url, const char *uri)
 {
     return strndup(&uri[url->field_data[UF_HOST].off], url->field_data[UF_HOST].len);
 }
@@ -44,7 +44,7 @@ static uint16_t url_get_port(struct http_parser_url *url)
     return port;
 }
 
-static char* url_get_authority(struct http_parser_url *url, char *uri)
+static char* url_get_authority(struct http_parser_url *url, const char *uri)
 {
     char *authority;
 
@@ -66,7 +66,7 @@ static char* url_get_authority(struct http_parser_url *url, char *uri)
     return authority;
 }
 
-static char* url_get_path(struct http_parser_url *url, char *uri)
+static char* url_get_path(struct http_parser_url *url, const char *uri)
 {
     /* path */
     char *path;
@@ -102,7 +102,7 @@ static char* url_get_path(struct http_parser_url *url, char *uri)
 }
 
 
-url_t *url_parse(char *uri)
+url_t *url_parse(const char *uri)
 {
     struct http_parser_url *url_parser = calloc(1, sizeof(struct http_parser_url));
     if(url_parser == NULL) {

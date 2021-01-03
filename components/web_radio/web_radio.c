@@ -73,9 +73,9 @@ void process_header_key_complete() {
     printf("< %s : ",hdr_key_buff);
 
     curr_header_field = 0;
-    if (strncmp(&hdr_key_buff, "content-type", hdr_key_buff_len) == 0) {
+    if (strncmp(hdr_key_buff, "content-type", hdr_key_buff_len) == 0) {
         curr_header_field = HDR_CONTENT_TYPE;
-    } else if (strncmp(&hdr_key_buff, "icy-metaint", hdr_key_buff_len) == 0) {
+    } else if (strncmp(hdr_key_buff, "icy-metaint", hdr_key_buff_len) == 0) {
         curr_header_field = HDR_ICY_METAINT;
     }
     memset(&hdr_key_buff, 0, HDR_KV_BUFF_LEN);
@@ -100,18 +100,18 @@ void process_header_value_complete() {
     printf("%s\n",hdr_value_buff);
 
     if (curr_header_field == HDR_CONTENT_TYPE) {
-        if (strstr(&hdr_value_buff, "application/octet-stream")) content_type = OCTET_STREAM;
-        if (strstr(&hdr_value_buff, "audio/aac")) content_type = AUDIO_AAC;
-        if (strstr(&hdr_value_buff, "audio/mp4")) content_type = AUDIO_MP4;
-        if (strstr(&hdr_value_buff, "audio/x-m4a")) content_type = AUDIO_MP4;
-        if (strstr(&hdr_value_buff, "audio/mpeg")) content_type = AUDIO_MPEG;
+        if (strstr(hdr_value_buff, "application/octet-stream")) content_type = OCTET_STREAM;
+        if (strstr(hdr_value_buff, "audio/aac")) content_type = AUDIO_AAC;
+        if (strstr(hdr_value_buff, "audio/mp4")) content_type = AUDIO_MP4;
+        if (strstr(hdr_value_buff, "audio/x-m4a")) content_type = AUDIO_MP4;
+        if (strstr(hdr_value_buff, "audio/mpeg")) content_type = AUDIO_MPEG;
 
         if(content_type == MIME_UNKNOWN) {
             ESP_LOGE(TAG, "unknown content-type: %s", (char*) &hdr_value_buff);
-            return -1;
+            return;
         }
     } else if (curr_header_field == HDR_ICY_METAINT) {
-        icymeta_interval = atoi(&hdr_value_buff);
+        icymeta_interval = atoi(hdr_value_buff);
     }
 
     memset(&hdr_value_buff, 0, HDR_KV_BUFF_LEN);

@@ -30,7 +30,7 @@ int icymeta_interval = 0;
  * @brief simple http_get
  * see https://github.com/nodejs/http-parser for callback usage
  */
-int http_client_get(char *uri, http_parser_settings *callbacks, void *user_data)
+int http_client_get(const char *uri, http_parser_settings *callbacks, void *user_data)
 {
     url_t *url = url_parse(uri);
 
