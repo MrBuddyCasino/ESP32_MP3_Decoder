@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include "audio_player.h"
+#include "audio_renderer.h"
 #include "spiram_fifo.h"
 #include "freertos/task.h"
 

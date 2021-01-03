@@ -13,7 +13,6 @@
 #include <ctype.h>
 
 #include "esp_log.h"
-#include "common_utils.h"
 #include "vector.h"
 #include "playlist.h"
 #include "ini.h"
@@ -57,6 +56,13 @@ char *pls_ini_reader(char* str, int num, uint8_t **str_ptr)
     //printf("pls_ini_reader: num %d - remaining %d - rlen %d - min %d - match %p\n", num, remaining, rlen, min(num, remaining), match);
     return str;
 }
+
+int starts_with(const char *str, const char *pre)
+{
+    size_t lenpre = strlen(pre), lenstr = strlen(str);
+    return lenstr < lenpre ? 0 : strncmp(pre, str, lenpre) == 0;
+}
+
 
 int pls_ini_handler(void* user, const char* section,
    const char* name, const char* value)

@@ -24,9 +24,9 @@
 //#include "../libfaad/structs.h"
 
 #include "common_buffer.h"
+#include "common_component.h"
 #include "m4a.h"
 #include "audio_renderer.h"
-#include "audio_player.h"
 #include "spiram_fifo.h"
 
 #define CODEC_ERROR -1
