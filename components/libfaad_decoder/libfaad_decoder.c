@@ -28,6 +28,7 @@
 #include "m4a.h"
 #include "audio_renderer.h"
 #include "spiram_fifo.h"
+#include "libfaad_decoder.h"
 
 #define CODEC_ERROR -1
 #define FAAD_BYTE_BUFFER_SIZE (2048-12)

@@ -20,6 +20,7 @@
 #include "aacdecoder_lib.h"
 #include "audio_renderer.h"
 #include "m4a.h"
+#include "fdk_aac_decoder.h"
 
 #define TAG "fdkaac_decoder"
 
