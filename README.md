@@ -8,11 +8,9 @@ Features:
 * Decodes MP3 and AAC (Beta)
 * Bluetooth Speaker mode
 
-## Origin
+## About this fork
 This is a fork from the popular [ESP32 Web Radio](https://github.com/MrBuddyCasino/ESP32_MP3_Decoder) by Michael Böckling.
 The original repository rely on an old version of ESP-IDF. This version intends to work on the current latest version end of 2020: v4.3-dev.  
-Using ESP-ADF would be a valuable alternative but it doesn't seem stable enough for non official ESP-ADF boards.
-****** This file requires additional updates *********
 
 This project is based on Sprite\_TM's awesome MP3 web radio project for the ESP8266: https://github.com/espressif/ESP8266_MP3_DECODER
 
@@ -29,21 +27,21 @@ Set the IDF_PATH environment variable, and point it to this directory.
     export IDF_PATH=/path/to/esp-idf
 
 Download the toolchain from: https://github.com/espressif/esp-idf#setting-up-esp-idf
-You will need version 5.2.0.
+The exact ESP-IDF version tested is cf84ae1e6 3452e06e7 on master branch of the Espressif repository
 Add /path/to/xtensa-esp32-elf/bin to your PATH:
 
     export PATH=/path/to/xtensa-esp32-elf/bin:$PATH
 
 Clone this repository:
 
-    git clone https://github.com/MrBuddyCasino/ESP32_MP3_Decoder.git
+    git clone https://github.com/fc92/ESP32_MP3_Decoder
     cd ESP32_MP3_Decoder/
     git submodule init && git submodule update
 
 ## Configuration
 
-The serial port and wifi credentials are configured using make.
-Type `make menuconfig` and 
+The serial port and wifi credentials are configured using idf.py.
+Type `idf.py menuconfig` and 
 
 * configure your serial port in `Serial flasher config` submenu
 * select `Web Radio / Bluetooth Speaker` submenu
@@ -52,25 +50,25 @@ Type `make menuconfig` and
   * activate / disable bt speaker mode
 * 'save', then exit
 
-You can edit the list of radio stations in the `/main/playlist.pls` playlist file.
+You can edit the list of radio stations in the `/components/playlist/playlist.pls` playlist file.
 
 ## Building
 If this is the first time, initialize the submodules:
 `git submodule init && git submodule update`.
-Then, just type `make`.
+Then, just type `idf.py build`.
 
 ## Flashing
-Connect your serial cable and run 'make flash'. To see serial console output run 'make monitor'.
+Connect your serial cable and run 'idf.py flash'. To see serial console output run 'idf.py monitor'.
 
-## Controls
+## Controls (not tested)
 You can advance to the next track in the playlist using the "Boot" button that is present on most development boards (GPIO0).
 
-## UI
+## UI (not tested)
 You can connect a <a href="https://www.adafruit.com/product/1312">NeoPixel</a> LED to pin 32. Its currently not doing much except blinking while wifi is connecting.
 
 ## Bluetooth Speaker Mode
 
-Enable `Classic Bluetooth` in `Component config > Bluetooth > Bluedroid Bluetooth stack enabled > Classic Bluetooth`, enable `A2DP`, then enable `Bluetooth Speaker Mode` via `make menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER". If you don't like that name, you can change it via menuconfig.
+Enable `Classic Bluetooth` in `Component config > Bluetooth > Bluedroid Bluetooth stack enabled > Classic Bluetooth`, enable `A2DP`, then enable `Bluetooth Speaker Mode` via `idf.py menuconfig`. After flashing, you should see a Bluetooth device called "ESP_SPEAKER". If you don't like that name, you can change it via menuconfig.
 
 ## Connecting the I2S codec
 
@@ -104,7 +102,7 @@ If you don't have an I2S codec on hand, there are two options:
 - Built-In DAC (low quality)
 - PDM (high quality)
 
-Run `make menuconfig` and choose one of them in the `Audio Output Mode` menu, then re-flash.
+Run `idf.py menuconfig` and choose one of them in the `Audio Output Mode` menu, then re-flash.
 You can now connect a speaker to ground and the pins 25 and 26 for the left and right channels.
 
 ## Known Issues
