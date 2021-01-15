@@ -10,6 +10,5 @@
 // defined via 'make menuconfig'
 #define AUDIO_OUTPUT_MODE CONFIG_AUDIO_OUTPUT_MODE
 
-#define FAKE_SPI_BUFF
 
 #endif

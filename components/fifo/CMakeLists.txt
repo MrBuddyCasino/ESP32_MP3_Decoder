@@ -1,7 +1,7 @@
 idf_component_register(SRCS 
                             "spiram_fifo.c"
                     INCLUDE_DIRS "include"
-                    PRIV_REQUIRES http main)
+                    PRIV_REQUIRES http )
 
 
 target_compile_options(${COMPONENT_LIB} PRIVATE 
